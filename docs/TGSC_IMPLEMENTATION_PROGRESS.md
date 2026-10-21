@@ -194,3 +194,15 @@ Record commit hashes only after commits actually exist. Record GPU/Kaggle verifi
 - Running guide includes both notebook modes, local per-model extraction command, exact example Kaggle mount path, and separate teacher/CIFAR/crop-bank Dataset preservation. No Kaggle Dataset was uploaded or published automatically.
 - Checks: python tools/validate_tgsc_delivery.py passed all 13 isolated tests, four notebook parses and CLI checks. A focused execution check covered all 16 notebook source combinations using mocked downloads, invalid source rejection, and upload folder contents/hash. git diff --check passed. GPU/Kaggle execution is still pending.
 - Source-options implementation committed as ec4677b and pushed successfully to origin/main. Next action: user can upload contents of download_ckpts/kaggle/resnet32x4/ as tgsc-teacher-resnet32x4, attach it with original CIFAR and the crop bank, and perform the documented one-epoch T4 smoke/resume run.
+
+### 2026-10-22: public GitHub page access diagnosis
+
+- User made origin public and reported a page-loading error. Unauthenticated GitHub API returned HTTP 200 with private=false, visibility=public and default_branch=main. Direct GitHub repository HTML returned HTTP 500; raw preparation notebook returned HTTP 200 and parsed as valid notebook JSON. Repository visibility and raw file access are working; the page request is failing server-side, with root cause not yet established.
+- Existing notebooks still default PRIVATE_REPO=True. For public clone access set it False in the settings cell; token setup is then unnecessary. No notebook defaults changed pending clarification of the failing page/cell.
+- Asked user for failing URL/error/location. Next action: use raw/local notebook upload to proceed with Kaggle, and diagnose the exact reported error if different from the reproduced repository HTTP 500. No training or GPU checks performed. Diagnostic downloaded files are ignored under .test-artifacts/.
+
+### 2026-10-22: replacement public repository
+
+- User confirmed the failing page is the GitHub repository itself and authorized trying a new repository. Created public ahmad903501/tgsc-mdistiller via authenticated GitHub API under the previously selected account. Existing ahmad903501/mdistiller-tgsc is preserved; no repository deletion or history rewriting.
+- Updated all four notebooks to the new clone URL and PRIVATE_REPO=False; GitHub token setup is optional for private forks only. Updated running guide. Local main will be pushed with its existing history, so previous revision pins remain valid.
+- Publication checks pending: notebook parsing, diff whitespace check, push and unauthenticated new repository page/raw notebook access. Next action: complete these checks and record their actual results; GPU/Kaggle training acceptance remains pending.
