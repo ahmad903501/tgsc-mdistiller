@@ -1,0 +1,43 @@
+{
+  "input": "two synthetic images per teacher; official pretrained teacher weights",
+  "device": "cpu",
+  "kaggle_executed": false,
+  "results": [
+    {
+      "config": "dkd_resnet56_to_resnet20.json",
+      "official_weights": true,
+      "crop_counts": {
+        "16": 6,
+        "20": 6,
+        "24": 6,
+        "28": 2,
+        "32": 2
+      },
+      "dkd_forward_backward": "pass"
+    },
+    {
+      "config": "dkd_resnet110_to_resnet32.json",
+      "official_weights": true,
+      "crop_counts": {
+        "16": 6,
+        "20": 6,
+        "24": 6,
+        "28": 2,
+        "32": 2
+      },
+      "dkd_forward_backward": "pass"
+    },
+    {
+      "config": "dkd_ResNet50_to_MobileNetV2.json",
+      "official_weights": true,
+      "crop_counts": {
+        "16": 6,
+        "20": 6,
+        "24": 6,
+        "28": 2,
+        "32": 2
+      },
+      "dkd_forward_backward": "pass"
+    }
+  ]
+}

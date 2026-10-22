@@ -56,6 +56,20 @@ Profiles are in `configs/tgsc/cifar100/`:
 
 The original profile source is recorded in JSON. Crop selection/formulas, batch 128, five 48-epoch stages, default augmentation .5/2, and each existing pair's LR schedule are preserved. Method objectives/weights come from audited official implementations. `method_options.gate_mode` can be `unified` or `decoupled` for DKD. No separate CE is added to SimKD.
 
+### Additional teacher preparation configs
+
+The following derived DKD configs extend the existing ResNet32x4 TGSC profile without changing its crop schedule, scoring, selection, multiplicities or augmentation. Published teacher/student pairs and DKD beta are taken from the official DKD YAMLs. MobileNetV2 uses the official pair LR .01; the other new students retain .05. These are derived TGSC profiles, not previously supplied pair JSONs.
+
+| Teacher | CONFIG_NAME | Suggested OUTPUT_DIR suffix |
+|---|---|---|
+| ResNet56 | dkd_resnet56_to_resnet20.json | prepare_resnet56 |
+| ResNet110 | dkd_resnet110_to_resnet32.json | prepare_resnet110 |
+| ResNet50 | dkd_ResNet50_to_MobileNetV2.json | prepare_ResNet50 |
+
+Use the preparation notebook with TEACHER_SOURCE="download" and the same TEACHER_DOWNLOAD_ROOT and CACHE_WRITE_ROOT. The actual registry/checkpoint capitalization matters for ResNet50. Run each teacher sequentially, rerunning all dependent notebook cells after changing CONFIG_NAME. Refresh the checkout to a revision containing these configs after any active preparation finishes; earlier pinned revisions do not contain them. Reuse the same original CIFAR files and keep all generated bank hash directories in the final Dataset.
+
+These additions are checked for crop preparation and DKD, not a claim that corresponding SimKD/ReviewKD configs have been provided. CPU checks with official teacher weights and two synthetic images covered oracle/cache creation and DKD backward at all five crop sizes; evidence is in TGSC_ADDITIONAL_TEACHER_CHECKS.json. Full-data Kaggle runs remain unverified.
+
 ## Prepare a bank once per teacher
 
 Example (replace paths for your system):

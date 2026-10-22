@@ -40,6 +40,29 @@ Epoch discrepancy: official train.py loops from zero and uses epoch/20; mdistill
 
 Use the three existing TGSC profiles: ResNet32x4 -> ResNet8x4, WRN40-2 -> WRN40-1, VGG13 -> VGG8. VGG ReviewKD has no verified active script coefficient: do not issue a supposedly official VGG ReviewKD config until that coefficient is established. Add a clearly documented ResNet32x4 -> ShuffleV2 compatibility pilot using the ResNet32x4 teacher crop bank and official student LR .01; this is an explicit derived TGSC profile, not an existing JSON reproduction. New pairs must state profile provenance and verified method settings.
 
+## Additional teacher audit from supplied PDFs (2026-10-22)
+
+Re-read the actual local DKD.pdf, SimKD.pdf and ReviewKD.pdf using PDF text extraction. Page numbers below count physical PDF pages, including the first page; no new runtime configs or scientific defaults were introduced by this audit.
+
+DKD Tables 6/7 (PDF pp. 6/7) and ReviewKD Tables 1/2 (PDF p. 5) establish these CIFAR-100 pairs:
+
+| Teacher | Published students in those benchmark tables | DKD beta, appendix Table A.2 (PDF p. 12) |
+|---|---|---|
+| ResNet56 | ResNet20 | 2 |
+| ResNet110 | ResNet32 | 2 |
+| ResNet32x4 | ResNet8x4, ShuffleNetV1, ShuffleNetV2 | 8 |
+| WRN40-2 | WRN16-2, WRN40-1, ShuffleNetV1 | 6 |
+| VGG13 | VGG8, MobileNetV2 | 6 |
+| ResNet50 | MobileNetV2 | 8 |
+
+DKD appendix A.2 (PDF p. 11): 240 epochs, batch 64, SGD momentum .9, weight decay .0005, LR .05 for ordinary ResNet/VGG/WRN students and .01 for MobileNet/ShuffleNet, decay by .1 at 150/180/210; CE weight 1, alpha 1, temperature 4, linear distillation-loss warmup 20 epochs. The three additional DKD upstream YAMLs res56_res20.yaml, res110_res32.yaml and res50_mv2.yaml agree with these pair choices and beta values (ResNet50 inherits beta 8).
+
+ReviewKD section 4.1 (PDF p. 6) instead uses 240 epochs, batch 128, LR .1 for ordinary students and .02 for MobileNet/ShuffleNet, decays .1 at 150/180/210. Released CIFAR-100/script/reviewKD.sh independently establishes HCL coefficients .6 for ResNet56 -> ResNet20 and 1.0 for ResNet110 -> ResNet32. It does not supply a ResNet50 -> MobileNetV2 command; do not guess that coefficient or claim the paper's benchmark table specifies it. Paper and method-specific optimization settings must be distinguished from the existing TGSC protocol retained by user instruction.
+
+SimKD section 4.1 (PDF p. 4) uses 240 epochs, batch 64, initial LR .05 for ordinary students and .01 for MobileNet/ShuffleNet, decay at 150/180/210, weight decay .0005, and describes Nesterov momentum .9. This is a paper/code distinction: the inspected train_student.py optimizer supplies momentum without nesterov=True. Main CIFAR tables 1/2 (PDF p. 5) use different pairs, including ResNet110x2 -> ResNet110/ResNet116/ShuffleNetV2, and WRN40-2 -> MobileNetV2. ResNet110x2 weights are not the official archive's plain ResNet110 weights. Applying the implemented SimKD objective to the three additional DKD/ReviewKD pairs is a new pair evaluation, not a reproduction of those SimKD table entries.
+
+The earlier phrase "not configured" refers to missing local JSONs, TGSC profile provenance and variable-crop integration checks, not missing published teacher-student choices. Only three supplied TGSC/configs JSONs exist (ResNet32x4 -> ResNet8x4, WRN40-2 -> WRN40-1, VGG13 -> VGG8). These distillation papers do not define TGSC crop scoring, multiplicities or curriculum profiles. Extending the same TGSC defaults to a new pair must be labeled as a derived profile; do not describe it as an existing teacher-specific TGSC setting. New feature-based pair alignment also still requires checks across curriculum resolutions.
+
 ## Provenance
 
 Upstream code identities: https://github.com/megvii-research/mdistiller , https://github.com/DefangChen/SimKD , https://github.com/JIA-Lab-research/ReviewKD . Ported files retain attribution. Check source license terms before distributing copied modules; do not claim a license grant where a reference repository contains none.
