@@ -105,6 +105,21 @@ Set `CACHE_ROOT` to the parent of the bank-hash folders, not the hash folder its
 
 The notebooks now point to the public repository `https://github.com/ahmad903501/tgsc-mdistiller.git` on `main`, with `PRIVATE_REPO=False`; no GitHub token is needed for this repository. The previous mdistiller-tgsc repository is preserved separately. Set a fixed commit revision to keep preparation and training reproducible. Cloning/installing/downloading needs Internet; offline sessions need those inputs supplied beforehand. Saving files locally in one session does not automatically persist/share them across sessions. Preserve notebook output before continuing elsewhere. No automatic upload or publication is performed.
 
+### Stage the three training notebooks while preparation runs
+
+Import each method notebook into a separate Kaggle notebook and save it as a draft: DKD + TGSC, SimKD + TGSC, and ReviewKD + TGSC. The distributed method notebooks pin runtime revision `3d350da`; use the actual preparation revision if different. Keep GPU=0, SEED=27, PRIVATE_REPO=False and both input sources set to "kaggle". Each method already has its own config and output directory.
+
+Do not start Run All while preparation is incomplete. Once preparation finishes, preserve its outputs and attach either that saved notebook output directly, or the separate CIFAR/teacher/cache Datasets. When attaching the full preparation output, let `PREP` be its actual mounted root (copy it from Kaggle's input browser), then set:
+
+```python
+PREP = Path("/kaggle/input/<actual-preparation-output-root>")
+DATA_ROOT = PREP / "data"
+TEACHER_CHECKPOINT = PREP / "teacher_weights/cifar_teachers/resnet32x4_vanilla/ckpt_epoch_240.pth"
+CACHE_ROOT = PREP / "tgsc_cache"
+```
+
+These paths assume preparation used the documented writable defaults. Separate Datasets may have a different layout; set the three paths individually in that case. Keep RESUME=None for a fresh run. Enable Internet for public clone/install and an available GPU before execution; no GitHub secret is required. Run the preflight and one-epoch check on DKD first, then resume it for the full schedule and run the other notebooks in sequence. A fresh Run All performs preflight, full training and final evaluation automatically. Each separate Kaggle session uses its own GPU 0; this does not assign the two GPUs of one session across notebooks. Save each completed run's output.
+
 ### Recommended T4 x2 workflow
 
 Start with one GPU for cache preparation (`GPU=0`). Preparing one teacher's bank is not distributed across both GPUs by this runner. Different teachers can be prepared by independent processes if desired, but do not launch two writers for the same bank.
