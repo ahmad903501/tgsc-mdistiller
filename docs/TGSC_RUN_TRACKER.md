@@ -2,7 +2,7 @@
 
 User reports four teacher/cache packages uploaded (2026-10-28). Dataset owner/slug URLs and expected mount paths are now recorded in notebooks/runs/run_manifest.json; Dataset version numbers have not been supplied. Cache upload does not mean a training run or Kaggle preflight has passed.
 
-Initial comparison: seed 27, 240 epochs, same uploaded Dataset version and matching preparation dependency versions for every run. DKD uses unified gating for the first comparison; decoupled gating is a later ablation. Config availability is distinct from real-GPU validation.
+Initial comparison: seed 27, 240 epochs, test evaluation every 5 epochs plus final/requested stop, same uploaded Dataset version and matching preparation dependency versions for every run. DKD uses unified gating for the first comparison; decoupled gating is a later ablation. Config availability is distinct from real-GPU validation.
 
 | ID | Teacher | Student | Method | Notebook | Setup | Run status | Test top-1 (%) | Kaggle output / checkpoint |
 |---|---|---|---|---|---|---|---|---|
@@ -24,3 +24,5 @@ There are 12 planned primary runs: 11 configs and per-run notebooks now exist; V
 Use one-epoch DKD ResNet32x4 smoke/resume as the first GPU acceptance step. For every full run, retain metrics.jsonl, run.json, latest.pt, inference_best.pt and the Kaggle output URL. Record whether the reported accuracy is final-epoch or best-epoch; do not mix them in comparison columns.
 
 Optional additional pair: ResNet32x4 -> ShuffleV2 has configs for all three methods and reuses the existing ResNet32x4 teacher bank. These 3 runs are outside the 12 above. WRN40-2 and ResNet50 complete banks have not been supplied; FitNet is deferred. Adding another seed multiplies the primary run count by 12.
+
+Training now uses only prepared crops; test-only data is downloaded separately (28 MB). JSONL/CSV logs and checkpoints are saved every epoch; PNG/SVG plots update with evaluation. Runtime pin: b8cd039. No new full training results are recorded here.

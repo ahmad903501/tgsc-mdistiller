@@ -84,7 +84,7 @@ The following derived DKD configs extend the existing ResNet32x4 TGSC profile wi
 
 Use the preparation notebook with TEACHER_SOURCE="download" and the same TEACHER_DOWNLOAD_ROOT and CACHE_WRITE_ROOT. The actual registry/checkpoint capitalization matters for ResNet50. Run each teacher sequentially, rerunning all dependent notebook cells after changing CONFIG_NAME. Refresh the checkout to a revision containing these configs after any active preparation finishes; earlier pinned revisions do not contain them. Reuse the same original CIFAR files and keep all generated bank hash directories in the final Dataset.
 
-These additions are checked for crop preparation and DKD, not a claim that corresponding SimKD/ReviewKD configs have been provided. CPU checks with official teacher weights and two synthetic images covered oracle/cache creation and DKD backward at all five crop sizes; evidence is in TGSC_ADDITIONAL_TEACHER_CHECKS.json. Full-data Kaggle runs remain unverified.
+These configs were first checked for crop preparation and DKD; ResNet56/ResNet110 SimKD and ReviewKD configs have since been added and checked, with notebooks in notebooks/runs/. ResNet50 still lacks a complete prepared bank. CPU checks with official teacher weights and two synthetic images covered oracle/cache creation and DKD backward at all five crop sizes; evidence is in TGSC_ADDITIONAL_TEACHER_CHECKS.json. Full-data Kaggle runs remain unverified.
 
 ## Prepare a bank once per teacher
 
@@ -114,7 +114,7 @@ The test-only artifact is [cifar100-test.npz](https://github.com/ahmad903501/tgs
 
 Preflight now defaults to a quick cache check: it memory-maps each crop file and checks up to 32 evenly spaced crop records per size, while retaining complete shape/identity, metadata, quality-score and full-image-cache source label checks. Model forward/backward checks still cover every curriculum size. It does not change which records are used for training. Training continues to fully read/validate every active stage once when loading it, rather than exhaustively scanning all stages again at startup.
 
-For exhaustive preflight, add `--full-cache-check`, e.g. in a notebook `run_tgsc("check", "--full-cache-check")`. Default `run_tgsc("check")` uses the quick mode. Pixel errors outside the quick sample are deferred to full stage loading; quick success is not a claim that every pixel has been scanned. Per-size progress/timings distinguish model checks, cache preflight and actual training-cache loading. Original CIFAR downloading and identity hashing still occur when required; Kaggle's UI estimate is not a measured duration or a guarantee.
+For exhaustive preflight, add `--full-cache-check`, e.g. in a notebook `run_tgsc("check", "--full-cache-check")`. Default `run_tgsc("check")` uses the quick mode. Pixel errors outside the quick sample are deferred to full stage loading; quick success is not a claim that every pixel has been scanned. Per-size progress/timings distinguish model checks, cache preflight and actual training-cache loading. Original CIFAR downloading/hashing occurs only for preparation; Kaggle's UI estimate is not a measured duration or a guarantee.
 
 
 ```bash
@@ -152,7 +152,7 @@ The notebooks now point to the public repository `https://github.com/ahmad903501
 
 ### Dataset-specific notebooks for the uploaded four caches
 
-Use [notebooks/runs/README.md](../notebooks/runs/README.md) for the per-run notebook index. There are 11 runnable notebooks with exact Dataset owner/slug, teacher/student/config, writable CIFAR root, separate outputs and pinned runtime/config revision d480294. The twelfth VGG13 ReviewKD file is explicitly PENDING and stops immediately because its official pair loss weight has not been established. No coefficient was guessed.
+Use [notebooks/runs/README.md](../notebooks/runs/README.md) for the per-run notebook index. There are 11 runnable notebooks with exact Dataset owner/slug, teacher/student/config, writable CIFAR root, separate outputs and pinned runtime/config revision b8cd039. The twelfth VGG13 ReviewKD file is explicitly PENDING and stops immediately because its official pair loss weight has not been established. No coefficient was guessed.
 
 Import a run notebook, attach its linked public Dataset using Add Input, enable GPU and Internet, then Run All. Dataset attachment cannot be performed just by setting a URL in Python. The input cell resolves both /kaggle/input/datasets/<owner>/<slug> and /kaggle/input/<slug>, handles one nested extraction folder, and requires one matching teacher plus a complete five-resolution bank. It checks preparation torch/torchvision versions early; the runner performs full identity checks later. Distinct outputs prevent cross-method overwrite. Fresh runs use RESUME=None; interrupted runs must attach latest.pt and set RESUME explicitly.
 
@@ -160,7 +160,7 @@ The source notebooks were cloned from the existing three method templates. ResNe
 
 ### Stage the three training notebooks while preparation runs
 
-Import each method notebook into a separate Kaggle notebook and save it as a draft: DKD + TGSC, SimKD + TGSC, and ReviewKD + TGSC. The distributed method notebooks pin runtime revision `d480294`; use the actual preparation revision if different. Keep GPU=0, SEED=27, PRIVATE_REPO=False with TEACHER_SOURCE="kaggle", CIFAR_SOURCE="download" (test-only), and EVAL_EVERY=5. Each method already has its own config and output directory.
+Import each method notebook into a separate Kaggle notebook and save it as a draft: DKD + TGSC, SimKD + TGSC, and ReviewKD + TGSC. The distributed method notebooks pin runtime revision `b8cd039`; use a compatible current runtime; the model/oracle sources and preparation dependencies must still match. Keep GPU=0, SEED=27, PRIVATE_REPO=False with TEACHER_SOURCE="kaggle", CIFAR_SOURCE="download" (test-only), and EVAL_EVERY=5. Each method already has its own config and output directory.
 
 Do not start Run All while preparation is incomplete. Once preparation finishes, preserve its outputs and attach either that saved notebook output directly, or the teacher/cache Dataset (optionally a separate test-only NPZ). When attaching the full preparation output, let `PREP` be its actual mounted root (copy it from Kaggle's input browser), then set:
 

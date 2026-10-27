@@ -118,7 +118,7 @@ def main():
         reports.append(report)
         print(f"Verified {report['output']}: {report['output_bytes'] / 2**30:.2f} GiB", flush=True)
     (output_dir / "upload_manifest.json").write_text(json.dumps(reports, indent=2) + "\n", encoding="utf-8")
-    print("Originals preserved. Upload the generated ZIPs; download CIFAR in each Kaggle runtime.")
+    print("Originals preserved. Upload the generated ZIPs; download only evaluation test data in each Kaggle runtime.")
 
 
 if __name__ == "__main__":

@@ -92,8 +92,8 @@ def generate(root, revision):
             intro = (f"# {title}\n\n"
                      f"Attach [{owner}/{slug}]({dataset_url}) with **Add Input** before running. "
                      "Enable GPU and Internet. No GitHub token is required. "
-                     "The notebook downloads original CIFAR files into writable storage, "
-                     "checks the supplied teacher/cache, trains for 240 epochs, and evaluates. "
+                     "Training uses only the supplied crop bank. Evaluation downloads only the verified 28 MB test split. "
+                     "The notebook checks the teacher/cache, trains for 240 epochs, evaluates every five epochs, and saves logs/plots. "
                      "Use the same Dataset version and preparation environment across methods.\n")
             nb["cells"][0] = cell("markdown", intro)
             settings = "".join(nb["cells"][1]["source"])
@@ -130,13 +130,15 @@ def generate(root, revision):
             records.append({"notebook": name, "teacher": teacher, "student": student,
                             "method": method.upper(), "config": config_name if ready else None,
                             "runtime_revision": revision, "dataset": f"{owner}/{slug}",
+                            "training_input": "crop_bank", "evaluation_every": 5,
                             "dataset_url": dataset_url, "runnable": ready,
                             "output_dir": f"/kaggle/working/tgsc_runs/{method}_{teacher}_to_{student}_seed27"})
     (output / "run_manifest.json").write_text(json.dumps(records, indent=2) + "\n", encoding="utf-8")
     lines = ["# Dataset-specific Kaggle runs", "",
              "Import one notebook into Kaggle, attach its linked Dataset with Add Input, enable GPU and Internet, then Run All.",
              "The public repository needs no token. Input paths resolve both owner-qualified and standard Kaggle mounts, including a single nested extraction folder.",
-             f"Runtime/config revision: `{revision}`. Defaults: GPU 0, seed 27, 240 epochs, DKD unified gating.",
+             f"Runtime/config revision: `{revision}`. Defaults: GPU 0, seed 27, 240 epochs, DKD unified gating, evaluation every 5 epochs plus final/requested stop.",
+             "Training/check use only the prepared bank. Evaluation downloads the verified 28 MB test-only NPZ; no original training images are downloaded. Checkpoints and JSONL/CSV logs are saved each epoch; PNG/SVG plots update with evaluation.",
              "These notebooks have local CPU/config checks; actual Kaggle execution is still pending. Keep Dataset versions fixed across methods.",
              "", "| Notebook | Dataset | Status |", "|---|---|---|"]
     lines += [f"| [{r['notebook']}]({r['notebook']}) | [{r['dataset']}]({r['dataset_url']}) | {'Ready for Kaggle preflight' if r['runnable'] else 'BLOCKED: unverified VGG ReviewKD settings'} |" for r in records]

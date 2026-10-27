@@ -68,6 +68,8 @@ class RunNotebookContracts(unittest.TestCase):
             self.assertEqual(env["DATASET_URL"], f"https://www.kaggle.com/datasets/{owner}/{slug}")
             self.assertEqual(env["CIFAR_SOURCE"], "download")
             self.assertEqual(env["TEACHER_SOURCE"], "kaggle")
+            self.assertEqual(env["EVAL_EVERY"], 5)
+            self.assertIsNone(env["TEST_DATA"])
             self.assertFalse(env["PRIVATE_REPO"])
             self.assertEqual(env["REVISION"], run["runtime_revision"])
             self.assertNotIn(str(env["OUTPUT_DIR"]), outputs)
