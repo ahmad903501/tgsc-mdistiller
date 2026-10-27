@@ -2,7 +2,7 @@
 
 Import one notebook into Kaggle, attach its linked Dataset with Add Input, enable GPU and Internet, then Run All.
 The public repository needs no token. Input paths resolve both owner-qualified and standard Kaggle mounts, including a single nested extraction folder.
-Runtime/config revision: `5c01799`. Defaults: GPU 0, seed 27, 240 epochs, DKD unified gating.
+Runtime/config revision: `d480294`. Defaults: GPU 0, seed 27, 240 epochs, DKD unified gating.
 These notebooks have local CPU/config checks; actual Kaggle execution is still pending. Keep Dataset versions fixed across methods.
 
 | Notebook | Dataset | Status |

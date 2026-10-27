@@ -142,7 +142,7 @@ The notebooks now point to the public repository `https://github.com/ahmad903501
 
 ### Dataset-specific notebooks for the uploaded four caches
 
-Use [notebooks/runs/README.md](../notebooks/runs/README.md) for the per-run notebook index. There are 11 runnable notebooks with exact Dataset owner/slug, teacher/student/config, writable CIFAR root, separate outputs and pinned runtime/config revision 5c01799. The twelfth VGG13 ReviewKD file is explicitly PENDING and stops immediately because its official pair loss weight has not been established. No coefficient was guessed.
+Use [notebooks/runs/README.md](../notebooks/runs/README.md) for the per-run notebook index. There are 11 runnable notebooks with exact Dataset owner/slug, teacher/student/config, writable CIFAR root, separate outputs and pinned runtime/config revision d480294. The twelfth VGG13 ReviewKD file is explicitly PENDING and stops immediately because its official pair loss weight has not been established. No coefficient was guessed.
 
 Import a run notebook, attach its linked public Dataset using Add Input, enable GPU and Internet, then Run All. Dataset attachment cannot be performed just by setting a URL in Python. The input cell resolves both /kaggle/input/datasets/<owner>/<slug> and /kaggle/input/<slug>, handles one nested extraction folder, and requires one matching teacher plus a complete five-resolution bank. It checks preparation torch/torchvision versions early; the runner performs full identity checks later. Distinct outputs prevent cross-method overwrite. Fresh runs use RESUME=None; interrupted runs must attach latest.pt and set RESUME explicitly.
 
@@ -150,7 +150,7 @@ The source notebooks were cloned from the existing three method templates. ResNe
 
 ### Stage the three training notebooks while preparation runs
 
-Import each method notebook into a separate Kaggle notebook and save it as a draft: DKD + TGSC, SimKD + TGSC, and ReviewKD + TGSC. The distributed method notebooks pin runtime revision `3d350da`; use the actual preparation revision if different. Keep GPU=0, SEED=27, PRIVATE_REPO=False and both input sources set to "kaggle". Each method already has its own config and output directory.
+Import each method notebook into a separate Kaggle notebook and save it as a draft: DKD + TGSC, SimKD + TGSC, and ReviewKD + TGSC. The distributed method notebooks pin runtime revision `d480294`; use the actual preparation revision if different. Keep GPU=0, SEED=27, PRIVATE_REPO=False and both input sources set to "kaggle". Each method already has its own config and output directory.
 
 Do not start Run All while preparation is incomplete. Once preparation finishes, preserve its outputs and attach either that saved notebook output directly, or the separate CIFAR/teacher/cache Datasets. When attaching the full preparation output, let `PREP` be its actual mounted root (copy it from Kaggle's input browser), then set:
 
