@@ -243,7 +243,10 @@ def train(exp, method, options, distiller, bank, test_dataset, device, output,
         if current != resolution:
             if crops is not None:
                 del crops
+            loaded_at = time.perf_counter()
+            print(f"Loading and fully validating {resolution}x{resolution} training cache...", flush=True)
             crops, current = bank.load(resolution), resolution
+            print(f"Training cache ready: {len(crops)} crops, {time.perf_counter()-loaded_at:.2f}s", flush=True)
         loader = training_loader(crops, exp, resolution, epoch)
         distiller.train()
         totals, diagnostics, n, gate_sum = {}, {}, 0, 0.

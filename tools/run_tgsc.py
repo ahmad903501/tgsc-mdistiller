@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 from dataclasses import asdict
 
 
@@ -24,6 +25,8 @@ def parser():
     p.add_argument("--download", action="store_true", help="Explicitly download CIFAR into data-root if absent")
     p.add_argument("--limit", type=int, help="Small data prefix for smoke checks; creates a distinct cache")
     p.add_argument("--stop-after-epoch", type=int, help="Save/stop at this completed epoch without changing scientific config")
+    p.add_argument("--full-cache-check", action="store_true",
+                   help="Read/scan all crop pixels during preflight instead of 32 records per size; training still validates each full active stage")
     return p
 
 
@@ -96,6 +99,7 @@ def main(argv=None):
     # Eval shape pass first, then method loss/backward with a real-size two-sample batch.
     shape_report = []
     for size in sorted({r for r, _ in exp.data.stages} | {32}):
+        print(f"Checking model loss/backward at {size}x{size}...", flush=True)
         distiller.train()
         image = torch.randn(2, 3, size, size, device=device)
         target = torch.tensor([0, 1], device=device)
@@ -107,12 +111,19 @@ def main(argv=None):
         shape_report.append({"resolution": size, "losses": {k:float(v.detach()) for k,v in losses.items()}})
     print(json.dumps({"shape_checks": shape_report}), flush=True)
     # Construct a fresh model below: preflight must not alter initial BN/RNG state for training.
+    targets = torch.tensor(ds.targets)
     for size in sorted({r for r, _ in exp.data.stages}):
-        loaded = bank.load(size)
-        if not torch.equal(loaded.labels, torch.tensor(ds.targets)[loaded.source_indices]):
+        start = time.perf_counter()
+        mode = "full crop scan" if args.full_cache_check else "32 sampled crops; full metadata/labels"
+        print(f"Checking cache {size}x{size} ({mode})...", flush=True)
+        loaded = bank.load(size, validation_samples=None if args.full_cache_check else 32,
+                           mmap=not args.full_cache_check)
+        if not torch.equal(loaded.labels, targets[loaded.source_indices]):
             raise ValueError("Cached labels do not align with original CIFAR sources")
-        print(f"Validated {bank.key}/res{size}: {len(loaded)} crops", flush=True)
+        print(f"Validated {bank.key}/res{size}: {len(loaded)} records, {time.perf_counter()-start:.2f}s", flush=True)
         del loaded
+    if not args.full_cache_check:
+        print("Quick preflight samples crop pixels; training fully validates each stage when loading it.", flush=True)
     if args.command == "check":
         print("Preflight passed; no training performed.", flush=True)
         return

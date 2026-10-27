@@ -1,0 +1,13 @@
+{
+  "device": "local CPU, 2 torch threads",
+  "input": "supplied real ResNet32x4 res24.pt",
+  "bytes": 1047604619,
+  "records": 150000,
+  "pixel_records_scanned_quick": 32,
+  "seconds": {
+    "quick": 0.091,
+    "full": 15.275
+  },
+  "kaggle_timing_verified": false,
+  "note": "single local warm-cache comparison; not a Kaggle duration guarantee"
+}

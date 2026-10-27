@@ -106,11 +106,13 @@ class CropBank:
             candidates.append(self.path(resolution, write=True))
         return next((p for p in candidates if p.is_file()), None)
 
-    def load(self, resolution):
+    def load(self, resolution, *, validation_samples=None, mmap=False):
+        if validation_samples is not None and validation_samples < 1:
+            raise ValueError("validation_samples must be positive, or None for a full scan")
         path = self.find(resolution)
         if path is None:
             raise FileNotFoundError(f"Missing TGSC cache {self.key}/res{resolution}.pt. Run run_tgsc.py prepare with this teacher/config and cache root.")
-        payload = torch.load(path, map_location="cpu", weights_only=True)
+        payload = torch.load(path, map_location="cpu", weights_only=True, mmap=mmap)
         if payload.get("manifest") != self.identity or payload.get("resolution") != resolution:
             raise ValueError(f"Cache identity/schema mismatch: {path}; regenerate rather than reuse legacy q-only data")
         state = payload["dataset"]
@@ -122,7 +124,13 @@ class CropBank:
             raise ValueError("Cache record counts differ or are empty")
         if state["crops"].shape != (n, 3, resolution, resolution) or state["components"].shape != (n, 3) or state["boxes"].shape != (n, 4):
             raise ValueError("Invalid crop/metric/box shapes")
-        if any(not torch.isfinite(v).all() for v in state.values()):
+        pixels = state["crops"]
+        if validation_samples is not None and n > validation_samples:
+            # Evenly spaced records include both ends without reading every crop page.
+            indices = torch.linspace(0, n - 1, validation_samples, dtype=torch.long)
+            pixels = pixels[indices]
+        if not torch.isfinite(pixels).all() or any(
+                not torch.isfinite(v).all() for k, v in state.items() if k != "crops"):
             raise ValueError("Non-finite cache values")
         if (state["components"] < 0).any() or ((state["scores"] < 0) | (state["scores"] > 1)).any():
             raise ValueError("Invalid oracle score ranges")

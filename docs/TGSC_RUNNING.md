@@ -102,6 +102,11 @@ Persistent crops are the unaugmented TGSC base views. Training retains TGSC's ra
 
 ## Check, train, resume and evaluate
 
+Preflight now defaults to a quick cache check: it memory-maps each crop file and checks up to 32 evenly spaced crop records per size, while retaining complete shape/identity, metadata, quality-score and original-source label checks. Model forward/backward checks still cover every curriculum size. It does not change which records are used for training. Training continues to fully read/validate every active stage once when loading it, rather than exhaustively scanning all stages again at startup.
+
+For exhaustive preflight, add `--full-cache-check`, e.g. in a notebook `run_tgsc("check", "--full-cache-check")`. Default `run_tgsc("check")` uses the quick mode. Pixel errors outside the quick sample are deferred to full stage loading; quick success is not a claim that every pixel has been scanned. Per-size progress/timings distinguish model checks, cache preflight and actual training-cache loading. Original CIFAR downloading and identity hashing still occur when required; Kaggle's UI estimate is not a measured duration or a guarantee.
+
+
 ```bash
 python tools/run_tgsc.py check --config configs/tgsc/cifar100/dkd_resnet32x4_to_resnet8x4.json --gpu 0 --teacher-checkpoint /weights/teacher.pth --data-root /data/cifar --cache-root /cache/tgsc
 python tools/run_tgsc.py train --config configs/tgsc/cifar100/dkd_resnet32x4_to_resnet8x4.json --gpu 0 --teacher-checkpoint /weights/teacher.pth --data-root /data/cifar --cache-root /cache/tgsc --output-dir /runs/dkd_seed27
