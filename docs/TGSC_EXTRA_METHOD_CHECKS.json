@@ -1,0 +1,55 @@
+{
+  "input": "synthetic images, official teacher checkpoints",
+  "device": "cpu",
+  "kaggle_executed": false,
+  "results": [
+    {
+      "config": "simkd_resnet56_to_resnet20.json",
+      "official_teacher_weights": true,
+      "resolutions": [
+        16,
+        20,
+        24,
+        28,
+        32
+      ],
+      "forward_backward": "pass"
+    },
+    {
+      "config": "reviewkd_resnet56_to_resnet20.json",
+      "official_teacher_weights": true,
+      "resolutions": [
+        16,
+        20,
+        24,
+        28,
+        32
+      ],
+      "forward_backward": "pass"
+    },
+    {
+      "config": "simkd_resnet110_to_resnet32.json",
+      "official_teacher_weights": true,
+      "resolutions": [
+        16,
+        20,
+        24,
+        28,
+        32
+      ],
+      "forward_backward": "pass"
+    },
+    {
+      "config": "reviewkd_resnet110_to_resnet32.json",
+      "official_teacher_weights": true,
+      "resolutions": [
+        16,
+        20,
+        24,
+        28,
+        32
+      ],
+      "forward_backward": "pass"
+    }
+  ]
+}

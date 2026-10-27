@@ -66,3 +66,7 @@ The earlier phrase "not configured" refers to missing local JSONs, TGSC profile 
 ## Provenance
 
 Upstream code identities: https://github.com/megvii-research/mdistiller , https://github.com/DefangChen/SimKD , https://github.com/JIA-Lab-research/ReviewKD . Ported files retain attribution. Check source license terms before distributing copied modules; do not claim a license grant where a reference repository contains none.
+
+## Additional pair delivery (2026-10-28)
+
+Added ResNet56 -> ResNet20 and ResNet110 -> ResNet32 configs for SimKD and ReviewKD. ReviewKD coefficients .6 and 1.0 come directly from the inspected official CIFAR-100/script/reviewKD.sh. SimKD retains factor 2 and feature coefficient 1 with its feature-only objective; these are additional pair evaluations rather than claims of reproducing the distinct published SimKD benchmark pairs. TGSC/data/optimizer settings are copied unchanged from the already checked derived DKD profiles. Actual CPU forward/backward checks with official teachers passed at all five curriculum sizes (TGSC_EXTRA_METHOD_CHECKS.json). VGG13 ReviewKD remains unconfigured pending a verified pair coefficient; no fallback from another pair is used.
