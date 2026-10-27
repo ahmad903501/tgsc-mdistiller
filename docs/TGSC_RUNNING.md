@@ -16,6 +16,22 @@ python tools/run_tgsc.py --help
 
 The TGSC runner uses JSON profiles and does not require YACS, TensorBoard, or W&B. Upstream `tools/train.py` still needs its original auxiliary dependencies. Verified here: Python 3.13, torch 2.6 CPU, torchvision 0.21 CPU; CUDA/Kaggle execution is not yet verified. No CPU training fallback is enabled by the CLI. `check --cpu-check` is available for offline checks with supplied weights/data/cache.
 
+## Minimal upload packages (existing preparation ZIPs)
+
+To avoid uploading CIFAR and duplicated preparation downloads, package existing saved-output ZIPs with:
+
+```bash
+python tools/package_tgsc_upload.py --source-dir ../datasets_cache --output-dir ../datasets_cache/kaggle_upload
+```
+
+The tool preserves originals and creates one teacher ZIP containing only its checkpoint, bank manifest and res16/res20/res24/res28/res32 crop files. It omits CIFAR (extracted and tar.gz), the combined teacher tar, repository/.git, logs, and reference.pt (used only to continue preparation). Info-ZIP, when installed, copies compressed entries without recompression; otherwise Python uses a portable streaming fallback. It verifies bank identity, teacher SHA-256 and output contents; copy mode also verifies compressed payload bytes. It refuses to overwrite existing outputs. The upload_manifest.json records exact inputs, identities and sizes.
+
+On 2026-10-28 the supplied four ZIPs (ResNet32x4, VGG13, ResNet56, ResNet110) yielded about 6.1 GiB of upload packages from 9.8 GiB of originals. WRN40-2 and ResNet50 were not present. Upload the four generated tgsc_*.zip files; copy actual attached paths from Kaggle after expansion. A Dataset containing all four packages can share teacher_weights/ and tgsc_cache/ because checkpoint/bank directories are unique.
+
+Training notebooks now default to CIFAR_SOURCE="download" and DATA_ROOT=/kaggle/working/data. Keep TEACHER_SOURCE="kaggle" and set TEACHER_CHECKPOINT/CACHE_ROOT to attached inputs. This removes CIFAR from the upload, not from the runtime: the current runner still downloads original train files for cache identity/label checks and uses test files for evaluation. No cache-only training bypass or loss/augmentation change was introduced.
+
+The inspected real cache manifests record torch 2.11.0+cu128 / torchvision 0.26.0+cu128; strict reuse requires that preparation environment and the same normalized source identity. Linux source identity matches the archived sources; Windows Path sorting orders mixed-case filenames differently, so do not reinterpret that platform-specific hash difference as changed crop/model code or rewrite cache manifests.
+
 ## Inputs and configs
 
 Provide CIFAR-100 in torchvision format: the data root contains the extracted `cifar-100-python/` directory. `--download` explicitly enables torchvision downloading into the selected data root; use a writable root for downloads. Teacher checkpoints accept `model`, `state_dict`, or a direct state dict and load strictly. Use trusted teacher artifacts compatible with the selected architecture; the runner never assumes personal checkpoint paths.
@@ -25,7 +41,7 @@ All four notebooks support two teacher sources through `TEACHER_SOURCE`:
 - `"download"`: download the official combined teacher archive (about 348 MiB), extract only the teacher selected by `CONFIG_NAME`, compare its SHA-256 against the archive, then verify strict loading and a finite 100-class CPU forward. The official release does not expose individual teacher assets. Existing archives are reused.
 - `"kaggle"`: use the attached single-model checkpoint at `TEACHER_CHECKPOINT`. Preflight loads it strictly into the configured architecture; cache identity also uses the checkpoint hash.
 
-The preparation notebook defaults to downloading; method notebooks default to attached artifacts. No `gdown` dependency or nonexistent `download_ckpts.sh` is used.
+Preparation defaults to downloading both inputs. Method notebooks attach teacher weights and download CIFAR to writable storage; an attached CIFAR Dataset remains optional. No `gdown` dependency or nonexistent `download_ckpts.sh` is used.
 
 For CIFAR-100, `CIFAR_SOURCE="download"` uses `torchvision.datasets.CIFAR100`, matching TGSC, with a writable `DATA_ROOT` (default `/kaggle/working/data` in preparation). `CIFAR_SOURCE="kaggle"` reads an attached Dataset with `download=False`; set `DATA_ROOT` to the parent of `cifar-100-python/`. CSV/PNG-only Kaggle copies need conversion and are not accepted directly. The same original files/order/labels must be used for preparation and training. See [torchvision CIFAR100](https://docs.pytorch.org/vision/stable/generated/torchvision.datasets.CIFAR100.html).
 
