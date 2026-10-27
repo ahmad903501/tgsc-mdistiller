@@ -16,18 +16,29 @@ def main():
     stage = scratch / ("delivery_" + uuid.uuid4().hex)
     stage.mkdir(parents=True)
     try:
-        for folder in ("mdistiller", "configs", "tools", "tests"):
+        for folder in ("mdistiller", "configs", "tools", "tests", "notebooks"):
             shutil.copytree(root/folder, stage/folder, ignore=shutil.ignore_patterns("__pycache__"))
         names = []
-        for path in sorted((root/"notebooks").glob("tgsc_*.ipynb")):
+        for path in sorted((root/"notebooks").rglob("tgsc_*.ipynb")):
             nb = json.loads(path.read_text(encoding="utf-8"))
             assert nb["nbformat"] == 4
             for cell in nb["cells"]:
                 if cell["cell_type"] == "code":
                     ast.parse("".join(cell["source"]))
                     assert cell["outputs"] == [] and cell["execution_count"] is None
-            names.append(path.name)
-        assert len(names) == 4
+            names.append(path.relative_to(root/"notebooks").as_posix())
+        assert len(list((root/"notebooks").glob("tgsc_*.ipynb"))) == 4
+        run_manifest = root/"notebooks/runs/run_manifest.json"
+        if run_manifest.exists():
+            runs = json.loads(run_manifest.read_text(encoding="utf-8"))
+            assert len(runs) == 12 and sum(r["runnable"] for r in runs) == 11
+            for run in runs:
+                assert (run_manifest.parent/run["notebook"]).is_file()
+                if run["runnable"]:
+                    config = json.loads((root/"configs/tgsc/cifar100"/run["config"]).read_text())
+                    assert config["teacher_model"] == run["teacher"]
+                    assert config["student_model"] == run["student"]
+                    assert config["method"].upper() == run["method"]
         env = dict(os.environ, PYTHONPATH="")
         # Keep user-site dependencies (torch is installed there on Windows), exclude sibling source imports.
         command = ("import pathlib,sys; sys.path.insert(0,str(pathlib.Path.cwd())); "
