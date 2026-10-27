@@ -1,0 +1,14 @@
+{
+  "test_download_bytes": 28067102,
+  "test_download_sha256": "cc2cf570b7933bd8005279fed5e60f256d02ea03b93d0f157cdbc63595d87e2a",
+  "public_unauthenticated_download": "HTTP 200; SHA256 matches",
+  "official_test_md5": "f0ef6b0ae62326f3e7ffdfab6717acfc",
+  "samples": 10000,
+  "all_images_and_fine_labels_equal_official_test": true,
+  "normalization_probe_indices": [
+    0,
+    1234,
+    9999
+  ],
+  "kaggle_executed": false
+}

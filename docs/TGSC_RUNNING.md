@@ -28,22 +28,22 @@ The tool preserves originals and creates one teacher ZIP containing only its che
 
 On 2026-10-28 the supplied four ZIPs (ResNet32x4, VGG13, ResNet56, ResNet110) yielded about 6.1 GiB of upload packages from 9.8 GiB of originals. WRN40-2 and ResNet50 were not present. Upload the four generated tgsc_*.zip files; copy actual attached paths from Kaggle after expansion. A Dataset containing all four packages can share teacher_weights/ and tgsc_cache/ because checkpoint/bank directories are unique.
 
-Training notebooks now default to CIFAR_SOURCE="download" and DATA_ROOT=/kaggle/working/data. Keep TEACHER_SOURCE="kaggle" and set TEACHER_CHECKPOINT/CACHE_ROOT to attached inputs. This removes CIFAR from the upload, not from the runtime: the current runner still downloads original train files for cache identity/label checks and uses test files for evaluation. No cache-only training bypass or loss/augmentation change was introduced.
+Training notebooks now default to CIFAR_SOURCE="download" and DATA_ROOT=/kaggle/working/data. Keep TEACHER_SOURCE="kaggle" and set TEACHER_CHECKPOINT/CACHE_ROOT to attached inputs. This keeps original CIFAR training data out of both the upload and runtime: the runner now trains directly from the prepared bank and downloads only the verified test-only NPZ for evaluation. No original training files are fetched. Teacher/source/oracle/dependency identity checks and consistency with full-image cached labels are retained; the original pixel fingerprint is retained as preparation provenance rather than independently recomputed.
 
 The inspected real cache manifests record torch 2.11.0+cu128 / torchvision 0.26.0+cu128; strict reuse requires that preparation environment and the same normalized source identity. Linux source identity matches the archived sources; Windows Path sorting orders mixed-case filenames differently, so do not reinterpret that platform-specific hash difference as changed crop/model code or rewrite cache manifests.
 
 ## Inputs and configs
 
-Provide CIFAR-100 in torchvision format: the data root contains the extracted `cifar-100-python/` directory. `--download` explicitly enables torchvision downloading into the selected data root; use a writable root for downloads. Teacher checkpoints accept `model`, `state_dict`, or a direct state dict and load strictly. Use trusted teacher artifacts compatible with the selected architecture; the runner never assumes personal checkpoint paths.
+Preparation requires original CIFAR-100 in torchvision format (`cifar-100-python/` under the data root); `prepare --download` can fetch it. Training and preflight require only the prepared bank and teacher weights. Evaluation accepts `--test-data /path/cifar100-test.npz`, or `--download` fetches only the verified 28 MB test artifact into the writable data root. Teacher checkpoints accept `model`, `state_dict`, or a direct state dict and load strictly. Use trusted teacher artifacts compatible with the selected architecture; the runner never assumes personal checkpoint paths.
 
 All four notebooks support two teacher sources through `TEACHER_SOURCE`:
 
 - `"download"`: download the official combined teacher archive (about 348 MiB), extract only the teacher selected by `CONFIG_NAME`, compare its SHA-256 against the archive, then verify strict loading and a finite 100-class CPU forward. The official release does not expose individual teacher assets. Existing archives are reused.
 - `"kaggle"`: use the attached single-model checkpoint at `TEACHER_CHECKPOINT`. Preflight loads it strictly into the configured architecture; cache identity also uses the checkpoint hash.
 
-Preparation defaults to downloading both inputs. Method notebooks attach teacher weights and download CIFAR to writable storage; an attached CIFAR Dataset remains optional. No `gdown` dependency or nonexistent `download_ckpts.sh` is used.
+Preparation defaults to downloading both original inputs. Method notebooks attach teacher weights/crop banks and download only test data; an attached test-only NPZ is optional. No `gdown` dependency or nonexistent `download_ckpts.sh` is used.
 
-For CIFAR-100, `CIFAR_SOURCE="download"` uses `torchvision.datasets.CIFAR100`, matching TGSC, with a writable `DATA_ROOT` (default `/kaggle/working/data` in preparation). `CIFAR_SOURCE="kaggle"` reads an attached Dataset with `download=False`; set `DATA_ROOT` to the parent of `cifar-100-python/`. CSV/PNG-only Kaggle copies need conversion and are not accepted directly. The same original files/order/labels must be used for preparation and training. See [torchvision CIFAR100](https://docs.pytorch.org/vision/stable/generated/torchvision.datasets.CIFAR100.html).
+In the preparation notebook, `CIFAR_SOURCE="download"` still uses torchvision original data. In method notebooks, that flag permits only the test-only download; `CIFAR_SOURCE="kaggle"` uses `TEST_DATA=Path("/kaggle/input/.../cifar100-test.npz")`. No original training split is required. Test pixels and fine labels are exactly the original 10,000-image split, converted once to pickle-free NPZ after official MD5 verification. The runtime checks a pinned SHA-256 before reading it.
 
 Equivalent local command:
 
@@ -59,7 +59,7 @@ python tools/download_teachers.py --teacher resnet32x4 --archive download_ckpts/
 
 Upload **the contents of `download_ckpts/kaggle/resnet32x4/`** as a Kaggle Dataset (e.g. `tgsc-teacher-resnet32x4`). It contains only the selected checkpoint under `cifar_teachers/resnet32x4_vanilla/` and `teacher_manifest.json`, which records its portable relative path, teacher name, official source and SHA-256. Do not include the 348 MiB archive. For this layout set `TEACHER_SOURCE="kaggle"` and `TEACHER_CHECKPOINT=/kaggle/input/tgsc-teacher-resnet32x4/cifar_teachers/resnet32x4_vanilla/ckpt_epoch_240.pth`; adjust to the actual mounted path. Change `--teacher` for another model. No weights are committed to Git, and no Dataset upload is automatic.
 
-For CIFAR, preserve `DATA_ROOT/cifar-100-python/` as a separate Dataset after the first download; attach it in later sessions with `CIFAR_SOURCE="kaggle"`. Keep the crop bank in its own reusable Dataset.
+For offline evaluation, preserve `DATA_ROOT/cifar100-test.npz` as an optional Dataset and set TEST_DATA to its attached path. Original CIFAR files are only needed if preparing new crop banks.
 
 The verified archive directory convention is `cifar_teachers/<teacher>_vanilla/ckpt_epoch_240.pth`. Case matters (`ResNet50`, versus `resnet32x4`). Actual archive entries and strict-load results are recorded in `TGSC_TEACHER_ARCHIVE_CHECKS.json`. The legacy official checkpoints include NumPy scalar metadata; the loader allows only the required scalar/dtype constructors while retaining `weights_only=True`. This compatibility fix requires updated code, so previously pinned revisions should be advanced before first real-checkpoint runs.
 
@@ -100,9 +100,19 @@ Preparation validates existing entries, writes missing resolutions atomically, a
 
 Persistent crops are the unaugmented TGSC base views. Training retains TGSC's random padded crop/flip; cached quality describes the base view, as in the supplied implementation. Teacher/student use the same augmented input. Teacher targets/features are computed online; oracle caching is not dense-feature caching.
 
+## Cache-only training, evaluation and plots
+
+`check` and `train` select a compatible bank from its manifest, validate teacher checkpoint/source/oracle/normalization/dependency identities, and derive source labels from the 32x32 full-image cache. Each crop label is checked against that mapping. No original training dataset is loaded or downloaded; the stored dataset fingerprint remains preparation provenance rather than a new hash of original pixels. For multiple compatible banks, select one with `--cache-key`.
+
+The default `--eval-every 5` evaluates at epochs 5,10,...,240, plus the final epoch or a requested early stop (including one-epoch smoke runs). Training metrics, latest checkpoints and inference exports are saved every epoch. Best checkpoints are selected only among actual evaluations; no accuracy is fabricated/interpolated on skipped epochs. Evaluation/plotting preserve training RNG, and resume retains logged history and evaluation cadence. A legacy every-epoch checkpoint needs `--eval-every 1` on resume.
+
+Outputs include metrics.jsonl and metrics.csv every epoch; training_curves.png and training_curves.svg update at evaluation points. Curves show loss terms, measured test top-1/top-5, mean TGSC quality/gate and LR. The JSONL also records curriculum resolution, raw quality means, gate saturation, source draw counts, optimizer steps and timing. Each notebook displays the saved plot after the run; these are saved artifacts rather than a live dashboard.
+
+The test-only artifact is [cifar100-test.npz](https://github.com/ahmad903501/tgsc-mdistiller/releases/download/tgsc-data-v1/cifar100-test.npz), 28,067,102 bytes, SHA-256 cc2cf570b7933bd8005279fed5e60f256d02ea03b93d0f157cdbc63595d87e2a. It contains the original 10,000 uint8 images/fine labels with no training images, verified against original test-file MD5 f0ef6b0ae62326f3e7ffdfab6717acfc. Preparation provenance: tools/prepare_cifar100_test.py; actual public-download/content checks: TGSC_TEST_DATA_CHECKS.json. The default writable path is /kaggle/working/data/cifar100-test.npz. This avoids the slow Toronto full-archive download seen in the supplied Kaggle log; download speed itself is not guaranteed.
+
 ## Check, train, resume and evaluate
 
-Preflight now defaults to a quick cache check: it memory-maps each crop file and checks up to 32 evenly spaced crop records per size, while retaining complete shape/identity, metadata, quality-score and original-source label checks. Model forward/backward checks still cover every curriculum size. It does not change which records are used for training. Training continues to fully read/validate every active stage once when loading it, rather than exhaustively scanning all stages again at startup.
+Preflight now defaults to a quick cache check: it memory-maps each crop file and checks up to 32 evenly spaced crop records per size, while retaining complete shape/identity, metadata, quality-score and full-image-cache source label checks. Model forward/backward checks still cover every curriculum size. It does not change which records are used for training. Training continues to fully read/validate every active stage once when loading it, rather than exhaustively scanning all stages again at startup.
 
 For exhaustive preflight, add `--full-cache-check`, e.g. in a notebook `run_tgsc("check", "--full-cache-check")`. Default `run_tgsc("check")` uses the quick mode. Pixel errors outside the quick sample are deferred to full stage loading; quick success is not a claim that every pixel has been scanned. Per-size progress/timings distinguish model checks, cache preflight and actual training-cache loading. Original CIFAR downloading and identity hashing still occur when required; Kaggle's UI estimate is not a measured duration or a guarantee.
 
@@ -124,13 +134,13 @@ python tools/run_tgsc.py evaluate --config configs/tgsc/cifar100/simkd_resnet32x
 
 Evaluation requires neither the oracle cache nor teacher-backbone weights. It uses saved normalization and the method's actual inference graph. SimKD retains its projector, frozen head, and teacher grid geometry; unsupported resolutions fail explicitly.
 
-Outputs: `run.json` (config/cache/environment), `metrics.jsonl`, `latest.pt`, `best.pt`, periodic `epoch_40.pt` etc., `inference_latest.pt`, and `inference_best.pt`. Best means highest observed epoch test top-1, following mdistiller's convention; it is not a separate held-out-validation selection claim. Do not overwrite an existing run without explicit resume. A final singleton crop is merged into the preceding batch to keep BatchNorm valid without dropping examples; this can produce a last batch one sample larger than the configured batch size.
+Outputs: `run.json` (config/cache/environment), `metrics.jsonl`, `latest.pt`, `best.pt`, periodic `epoch_40.pt` etc., `inference_latest.pt`, and `inference_best.pt`. Best means highest measured test top-1 at the configured evaluation points, following mdistiller's convention; it is not a separate held-out-validation selection claim. Do not overwrite an existing run without explicit resume. A final singleton crop is merged into the preceding batch to keep BatchNorm valid without dropping examples; this can produce a last batch one sample larger than the configured batch size.
 
 ## Kaggle notebooks
 
 For a private GitHub repository, add a Kaggle Secret named `GITHUB_TOKEN` and enable access to it for the notebook. A fine-grained token needs read access to repository contents for this repository. Leave `PRIVATE_REPO=True` in the settings cell. The clone helper uses temporary Git askpass code and a child-process environment; it does not put the token in the repository URL or print/store its value. For a public repository, set `PRIVATE_REPO=False` instead. These notebook cells target Kaggle's Linux runtime; local users can clone with their normal Git credentials.
 
-Open `notebooks/tgsc_prepare_cifar100.ipynb`, edit its settings cell, enable a GPU, and prepare the teacher bank. Save its outputs or create a Kaggle Dataset from `tgsc_cache/`. Attach that artifact to each method notebook:
+Open `notebooks/tgsc_prepare_cifar100.ipynb`, edit its settings cell, enable a GPU, and prepare the teacher bank. Save its outputs or create a Kaggle Dataset containing teacher weights and `tgsc_cache/`. Attach that artifact to each method notebook:
 
 - `tgsc_dkd_cifar100.ipynb`
 - `tgsc_simkd_cifar100.ipynb`
@@ -150,18 +160,18 @@ The source notebooks were cloned from the existing three method templates. ResNe
 
 ### Stage the three training notebooks while preparation runs
 
-Import each method notebook into a separate Kaggle notebook and save it as a draft: DKD + TGSC, SimKD + TGSC, and ReviewKD + TGSC. The distributed method notebooks pin runtime revision `d480294`; use the actual preparation revision if different. Keep GPU=0, SEED=27, PRIVATE_REPO=False and both input sources set to "kaggle". Each method already has its own config and output directory.
+Import each method notebook into a separate Kaggle notebook and save it as a draft: DKD + TGSC, SimKD + TGSC, and ReviewKD + TGSC. The distributed method notebooks pin runtime revision `d480294`; use the actual preparation revision if different. Keep GPU=0, SEED=27, PRIVATE_REPO=False with TEACHER_SOURCE="kaggle", CIFAR_SOURCE="download" (test-only), and EVAL_EVERY=5. Each method already has its own config and output directory.
 
-Do not start Run All while preparation is incomplete. Once preparation finishes, preserve its outputs and attach either that saved notebook output directly, or the separate CIFAR/teacher/cache Datasets. When attaching the full preparation output, let `PREP` be its actual mounted root (copy it from Kaggle's input browser), then set:
+Do not start Run All while preparation is incomplete. Once preparation finishes, preserve its outputs and attach either that saved notebook output directly, or the teacher/cache Dataset (optionally a separate test-only NPZ). When attaching the full preparation output, let `PREP` be its actual mounted root (copy it from Kaggle's input browser), then set:
 
 ```python
 PREP = Path("/kaggle/input/<actual-preparation-output-root>")
-DATA_ROOT = PREP / "data"
+DATA_ROOT = Path("/kaggle/working/data")  # Only the small test NPZ is downloaded here
 TEACHER_CHECKPOINT = PREP / "teacher_weights/cifar_teachers/resnet32x4_vanilla/ckpt_epoch_240.pth"
 CACHE_ROOT = PREP / "tgsc_cache"
 ```
 
-These paths assume preparation used the documented writable defaults. Separate Datasets may have a different layout; set the three paths individually in that case. Keep RESUME=None for a fresh run. Enable Internet for public clone/install and an available GPU before execution; no GitHub secret is required. Run the preflight and one-epoch check on DKD first, then resume it for the full schedule and run the other notebooks in sequence. A fresh Run All performs preflight, full training and final evaluation automatically. Each separate Kaggle session uses its own GPU 0; this does not assign the two GPUs of one session across notebooks. Save each completed run's output.
+These paths assume preparation used the documented writable defaults. Separate Datasets may have a different layout; set teacher/cache paths individually in that case. Original train files are not needed. Keep RESUME=None for a fresh run. Enable Internet for public clone/install and an available GPU before execution; no GitHub secret is required. Run the preflight and one-epoch check on DKD first, then resume it for the full schedule and run the other notebooks in sequence. A fresh Run All performs preflight, full training and final evaluation automatically. Each separate Kaggle session uses its own GPU 0; this does not assign the two GPUs of one session across notebooks. Save each completed run's output.
 
 ### Recommended T4 x2 workflow
 
@@ -207,10 +217,10 @@ Run each selected config's preflight before this concurrent launch. The two jobs
 ### Preparation, dataset upload, and first training run
 
 1. Import `tgsc_prepare_cifar100.ipynb` into Kaggle. Choose an available T4 x2 accelerator and turn Internet on for the clone/install. Add the GitHub Secret if the repository is private.
-2. For the first preparation, leave `TEACHER_SOURCE="download"` and `CIFAR_SOURCE="download"` with writable roots. Alternatively set either source to `"kaggle"` and provide its attached path. Preserve the selected weights and original CIFAR files as reusable Datasets, in addition to the crop bank.
+2. For the first preparation, leave `TEACHER_SOURCE="download"` and `CIFAR_SOURCE="download"` with writable roots. Alternatively set either source to `"kaggle"` and provide its attached path. Preserve selected weights and the crop bank as reusable Datasets. Original CIFAR is only needed to prepare new banks.
 3. Use one teacher/profile first: ResNet32x4 -> ResNet8x4. Set `GPU=0`, the repository revision, and `CACHE_WRITE_ROOT=/kaggle/working/tgsc_cache`. Run preparation. The DKD-named config selects the teacher's TGSC profile; the resulting bank is not DKD-specific.
 4. Preserve the completed `tgsc_cache/` output, then create a Kaggle Dataset containing that directory (or attach the saved notebook output directly). Keep the bank hash directory and filenames unchanged.
-5. Import the DKD method notebook and attach **all three** inputs: original CIFAR-100, teacher weights, and the prepared cache. Original training data is still used to validate dataset identity; test data supplies evaluation. Cached oracle values do not replace online teacher features/logits.
+5. Import the DKD method notebook and attach teacher weights and the prepared cache. Training/check load no original CIFAR training data. Evaluation downloads only the verified test NPZ (or accepts an attached copy via TEST_DATA). Cached oracle values do not replace online teacher features/logits.
 6. Set `CACHE_ROOT` to the directory directly containing the bank hash folders, e.g. `/kaggle/input/<your-cache-dataset>/tgsc_cache`, using the actual mounted path. Keep the same code revision, torch/torchvision versions, teacher weights, and TGSC preprocessing used during preparation, because these identify the cache.
 7. Run preflight, then a one-epoch GPU smoke run by adding `--stop-after-epoch 1` to the training arguments. Check finite losses/checkpoints and `metrics.jsonl`, then resume from `latest.pt` for the remaining epochs. The stop flag does not shorten the saved scientific configuration.
 8. After one method works, run the other method notebooks against the same teacher cache, or use the concurrent two-GPU example. Save each notebook's output/checkpoints before ending its session. Repeat preparation only when changing the teacher checkpoint or cache-identifying settings.

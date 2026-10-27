@@ -200,7 +200,9 @@ def resume_contract(config):
 
 
 def train(exp, method, options, distiller, bank, test_dataset, device, output,
-          resume=None, stop_after_epoch=None, launch_args=None):
+          resume=None, stop_after_epoch=None, launch_args=None, eval_every=5):
+    if eval_every < 1:
+        raise ValueError("eval_every must be positive")
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     if (output / "latest.pt").exists() and not resume:
@@ -217,23 +219,29 @@ def train(exp, method, options, distiller, bank, test_dataset, device, output,
     extra_parameters = distiller.get_extra_parameters()
     provenance = {"config": run_config, "cache": bank.identity, "environment": environment(),
                   "launch_args": launch_args,
+                  "evaluation": {"every": eval_every, "also_final_or_requested_stop": True},
                   "parameters": {"student": student_parameters,
                                  "extra": extra_parameters,
                                  "trainable": sum(p.numel() for p in parameters),
                                  "deployed": student_parameters + (extra_parameters if method == "SIMKD" else 0)}}
-    start, best, best_inference = 1, -1., None
+    start, best, best_inference, best_epoch, history = 1, -1., None, None, []
     if resume:
         state = torch.load(resume, map_location="cpu", weights_only=True)
         if resume_contract(state["config"]) != resume_contract(run_config) or state["cache"] != bank.identity:
             raise ValueError("Resume config/cache differs; only output/data/cache/checkpoint path relocation is allowed")
+        if state.get("evaluation", {"every": 1})["every"] != eval_every:
+            raise ValueError("Resume evaluation interval differs; use the checkpoint's --eval-every value")
         distiller.load_state_dict(state["model"])
         optimizer.load_state_dict(state["optimizer"])
         scheduler.load_state_dict(state["scheduler"])
         start, best = state["epoch"] + 1, state["best_top1"]
         best_inference = state.get("best_inference")
+        best_epoch, history = state.get("best_epoch"), state.get("metrics_history", [])
         if best_inference is not None:
             atomic_save(best_inference, output / "inference_best.pt")
         restore_rng(state["rng"])
+        if history:
+            (output/"metrics.jsonl").write_text("".join(json.dumps(row)+"\n" for row in history), encoding="utf-8")
     (output / "run.json").write_text(json.dumps(provenance, indent=2), encoding="utf-8")
     test_loader = DataLoader(test_dataset, batch_size=exp.data.batch_size, num_workers=exp.data.num_workers)
     plan = build_stage_plan(exp.data.stages)
@@ -274,21 +282,35 @@ def train(exp, method, options, distiller, bank, test_dataset, device, output,
             q_max = max(q_max, float(metadata["q"].max()))
             n += count
             gate_sum += float((metadata["q"] / exp.tgsc.score_high).clamp(max=1).sum())
-        metrics = evaluate(distiller, test_loader, device)
-        improved = metrics["top1"] > best
-        best = max(best, metrics["top1"])
+        stopping = bool(stop_after_epoch and epoch >= stop_after_epoch)
+        should_evaluate = epoch % eval_every == 0 or epoch == exp.train.epochs or stopping
+        metrics = None
+        if should_evaluate:
+            # Evaluation must not change subsequent crop augmentation or resume RNG state.
+            before_evaluation = rng_state()
+            try:
+                metrics = evaluate(distiller, test_loader, device)
+            finally:
+                restore_rng(before_evaluation)
+        improved = metrics is not None and metrics["top1"] > best
+        if improved:
+            best, best_epoch = metrics["top1"], epoch
         row = {"epoch": epoch, "resolution": resolution, "lr": optimizer.param_groups[0]["lr"],
                "train": {k:v/n for k,v in totals.items()}, "gate_mean": gate_sum/n,
                "diagnostics": {k:v/n for k,v in diagnostics.items()},
                "gate_saturated_fraction": saturated/n, "q_min": q_min, "q_max": q_max,
                "unique_source_images": int(crops.source_indices.unique().numel()),
                "source_draws": n, "optimizer_steps": len(loader), "test": metrics,
+               "test_evaluated": should_evaluate, "best_test_top1": best if best >= 0 else None,
+               "best_epoch": best_epoch,
                "seconds": time.monotonic()-begin}
         scheduler.step()
         inference = export_payload(distiller, exp, method, options)
         if improved:
             best_inference = inference
+        history.append(row)
         state = {**provenance, "epoch": epoch, "best_top1": best, "best_inference": best_inference,
+                 "best_epoch": best_epoch, "metrics_history": history,
                  "model": distiller.state_dict(),
                  "optimizer": optimizer.state_dict(), "scheduler": scheduler.state_dict(), "rng": rng_state()}
         atomic_save(state, output / "latest.pt")
@@ -300,7 +322,16 @@ def train(exp, method, options, distiller, bank, test_dataset, device, output,
             atomic_save(state, output / f"epoch_{epoch}.pt")
         with (output / "metrics.jsonl").open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(row) + "\n")
+        from .reporting import write_reports
+        before_reporting = rng_state()
+        try:
+            write_reports(output, plots=should_evaluate)
+        finally:
+            restore_rng(before_reporting)
         print(json.dumps(row), flush=True)
-        if stop_after_epoch and epoch >= stop_after_epoch:
+        if metrics is not None:
+            print(f"Test epoch {epoch}: top-1 {metrics['top1']:.2f}%, top-5 {metrics['top5']:.2f}%; "
+                  f"best measured top-1 {best:.2f}% at epoch {best_epoch}", flush=True)
+        if stopping:
             break
     return best

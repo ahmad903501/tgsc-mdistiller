@@ -70,21 +70,25 @@ def dataset_hash(dataset):
     return h.hexdigest()
 
 
-def manifest(exp, teacher_checkpoint, dataset):
+def _manifest_identity(exp, teacher_checkpoint, dataset_sha256, count):
     from torchvision import __version__ as torchvision_version
     # Source identity prevents silent use of crops from different model/oracle behavior.
     source = hashlib.sha256()
     paths = [Path(__file__).with_name("oracle.py"), Path(__file__).with_name("utils.py")]
-    paths += sorted((Path(__file__).parents[1] / "models" / "cifar").glob("*.py"))
+    paths += sorted((Path(__file__).parents[1] / "models" / "cifar").glob("*.py"), key=lambda p: p.name)
     for path in paths:
         source.update(path.name.encode()); source.update(path.read_text(encoding="utf-8-sig").encode())
     return {"schema": SCHEMA, "teacher": exp.teacher_model,
             "checkpoint_sha256": file_hash(teacher_checkpoint),
-            "dataset_sha256": dataset_hash(dataset), "count": len(dataset), "split": "train",
+            "dataset_sha256": dataset_sha256, "count": count, "split": "train",
             "mean": list(exp.data.mean), "std": list(exp.data.std),
             "oracle": {k: getattr(exp.tgsc, k) for k in ORACLE_FIELDS},
             "source_sha256": source.hexdigest(), "torch": str(torch.__version__),
             "torchvision": str(torchvision_version)}
+
+
+def manifest(exp, teacher_checkpoint, dataset):
+    return _manifest_identity(exp, teacher_checkpoint, dataset_hash(dataset), len(dataset))
 
 
 class CropBank:
@@ -93,6 +97,49 @@ class CropBank:
         self.key = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()[:24]
         self.read_root = Path(read_root)
         self.write_root = Path(write_root) if write_root else None
+        self.source_targets = None
+
+    @classmethod
+    def from_prepared(cls, exp, teacher_checkpoint, read_root, *, key=None, count=None):
+        """Validate a prepared bank's provenance without fetching original train pixels."""
+        root = Path(read_root)
+        paths = [root/key/"manifest.json"] if key else sorted(root.glob("*/manifest.json"))
+        matches, failures = [], []
+        for path in paths:
+            if not path.is_file():
+                continue
+            identity = json.loads(path.read_text(encoding="utf-8"))
+            if identity.get("teacher") != exp.teacher_model:
+                continue
+            n, digest = identity.get("count"), identity.get("dataset_sha256")
+            if not isinstance(n, int) or n < 2 or not isinstance(digest, str) or len(digest) != 64:
+                raise ValueError(f"Invalid prepared dataset provenance: {path}")
+            if count is not None and n != count:
+                continue
+            expected = _manifest_identity(exp, teacher_checkpoint, digest, n)
+            mismatches = [k for k in expected if identity.get(k) != expected[k]]
+            bank = cls(expected, root)
+            if mismatches or path.parent.name != bank.key:
+                failures.append(f"{path.parent.name}: {mismatches or ['bank directory hash']}")
+                continue
+            if not all(bank.find(r) for r, _ in exp.data.stages):
+                failures.append(f"{bank.key}: incomplete curriculum crop files")
+                continue
+            matches.append(bank)
+        if len(matches) != 1:
+            raise ValueError(f"Expected one compatible prepared {exp.teacher_model} bank, found {len(matches)}. "
+                             f"Use --cache-key for multiple banks. Compatibility failures: {failures}")
+        return matches[0]
+
+    def establish_source_labels(self):
+        """Use full-image records to check label consistency across all crop sizes."""
+        full = self.load(32, validation_samples=32, mmap=True)
+        labels = torch.full((self.identity["count"],), -1, dtype=torch.long)
+        labels[full.source_indices] = full.labels
+        if (labels < 0).any() or not torch.equal(labels[full.source_indices], full.labels):
+            raise ValueError("Full-image cache must cover every source with consistent labels")
+        self.source_targets = labels
+        return labels
 
     def path(self, resolution, write=False):
         root = self.write_root if write else self.read_root
@@ -138,6 +185,9 @@ class CropBank:
             raise ValueError("Invalid original source indices")
         if ((state["labels"] < 0) | (state["labels"] >= 100)).any():
             raise ValueError("Invalid CIFAR-100 labels")
+        if self.source_targets is not None and not torch.equal(
+                state["labels"], self.source_targets[state["source_indices"]]):
+            raise ValueError("Cached labels differ from full-image source labels")
         boxes = state["boxes"]
         if (boxes < 0).any() or (boxes > 32).any() or not torch.all(boxes[:, 2:] - boxes[:, :2] == resolution):
             raise ValueError("Crop boxes do not match the cached resolution")

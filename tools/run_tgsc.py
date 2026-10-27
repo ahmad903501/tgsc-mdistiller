@@ -17,12 +17,15 @@ def parser():
     p.add_argument("--teacher-checkpoint")
     p.add_argument("--data-root")
     p.add_argument("--cache-root", default="tgsc_cache", help="Read-only input bank parent, not the bank's hash directory")
+    p.add_argument("--cache-key", help="Select one compatible prepared bank when several exist")
     p.add_argument("--cache-write-root", help="Writable cache parent for prepare; defaults to cache-root")
     p.add_argument("--output-dir")
     p.add_argument("--seed", type=int)
     p.add_argument("--resume")
     p.add_argument("--export", help="Inference export for evaluate")
-    p.add_argument("--download", action="store_true", help="Explicitly download CIFAR into data-root if absent")
+    p.add_argument("--download", action="store_true", help="Download source CIFAR for prepare; only the 28 MB test artifact for train/evaluate")
+    p.add_argument("--test-data", help="Existing cifar100-test.npz path; no training images required")
+    p.add_argument("--eval-every", type=int, default=5, help="Evaluate every N epochs, plus final/requested stop (default 5)")
     p.add_argument("--limit", type=int, help="Small data prefix for smoke checks; creates a distinct cache")
     p.add_argument("--stop-after-epoch", type=int, help="Save/stop at this completed epoch without changing scientific config")
     p.add_argument("--full-cache-check", action="store_true",
@@ -34,6 +37,8 @@ def main(argv=None):
     args = parser().parse_args(argv)
     if args.gpu < 0:
         raise ValueError("--gpu must be a nonnegative visible-device index")
+    if args.eval_every < 1:
+        raise ValueError("--eval-every must be positive")
     inherited = os.environ.get("CUDA_VISIBLE_DEVICES")
     devices = inherited.split(",") if inherited is not None else None
     if args.cpu_check:
@@ -55,6 +60,7 @@ def main(argv=None):
     from torch.utils.data import DataLoader
     from mdistiller.tgsc.experiment import load_run
     from mdistiller.tgsc.cache import cifar_dataset, manifest, CropBank, prepare_bank
+    from mdistiller.tgsc.evaluation_data import test_dataset
     from mdistiller.tgsc.runtime import (seed_everything, environment, build_model, load_teacher,
                                       build_distiller, load_export, evaluate, train)
     exp, method, options, raw = load_run(args.config)
@@ -77,7 +83,7 @@ def main(argv=None):
         if meta["method"] != method or meta["student_model"] != exp.student_model:
             raise ValueError("Export does not match selected method/student")
         exp.data.mean, exp.data.std = tuple(meta["mean"]), tuple(meta["std"])
-        ds = cifar_dataset(exp, train=False, download=args.download, limit=args.limit)
+        ds = test_dataset(exp, download=args.download, limit=args.limit, path=args.test_data)
         result = evaluate(model.to(device), DataLoader(ds, batch_size=exp.data.batch_size,
                           num_workers=exp.data.num_workers), device)
         print(json.dumps(result), flush=True)
@@ -86,9 +92,14 @@ def main(argv=None):
     if not teacher_path or not Path(teacher_path).is_file():
         raise FileNotFoundError("Provide the existing --teacher-checkpoint file; model registry paths are not assumed")
     teacher = load_teacher(build_model(exp.teacher_model, exp.num_classes), teacher_path)
-    ds = cifar_dataset(exp, download=args.download, limit=args.limit)
-    identity = manifest(exp, teacher_path, ds)
-    bank = CropBank(identity, args.cache_root, args.cache_write_root or (args.cache_root if args.command == "prepare" else None))
+    if args.command == "prepare":
+        ds = cifar_dataset(exp, download=args.download, limit=args.limit)
+        identity = manifest(exp, teacher_path, ds)
+        bank = CropBank(identity, args.cache_root, args.cache_write_root or args.cache_root)
+    else:
+        bank = CropBank.from_prepared(exp, teacher_path, args.cache_root, key=args.cache_key, count=args.limit)
+        bank.establish_source_labels()
+        print("Training inputs: prepared crop bank only; original CIFAR training files are not loaded or downloaded.", flush=True)
     print(json.dumps({"method": method, "teacher": exp.teacher_model, "student": exp.student_model,
                       "cache_key": bank.key, "profile_source": raw.get("profile_source"),
                       "config": asdict(exp), "method_options": options}), flush=True)
@@ -111,7 +122,7 @@ def main(argv=None):
         shape_report.append({"resolution": size, "losses": {k:float(v.detach()) for k,v in losses.items()}})
     print(json.dumps({"shape_checks": shape_report}), flush=True)
     # Construct a fresh model below: preflight must not alter initial BN/RNG state for training.
-    targets = torch.tensor(ds.targets)
+    targets = bank.source_targets
     for size in sorted({r for r, _ in exp.data.stages}):
         start = time.perf_counter()
         mode = "full crop scan" if args.full_cache_check else "32 sampled crops; full metadata/labels"
@@ -119,7 +130,7 @@ def main(argv=None):
         loaded = bank.load(size, validation_samples=None if args.full_cache_check else 32,
                            mmap=not args.full_cache_check)
         if not torch.equal(loaded.labels, targets[loaded.source_indices]):
-            raise ValueError("Cached labels do not align with original CIFAR sources")
+            raise ValueError("Cached labels do not align with full-image cache source labels")
         print(f"Validated {bank.key}/res{size}: {len(loaded)} records, {time.perf_counter()-start:.2f}s", flush=True)
         del loaded
     if not args.full_cache_check:
@@ -130,11 +141,11 @@ def main(argv=None):
     seed_everything(exp.train.seed)
     del distiller
     distiller = build_distiller(exp, method, options, teacher.cpu())
-    test_ds = cifar_dataset(exp, train=False, download=args.download, limit=args.limit)
+    test_ds = test_dataset(exp, download=args.download, limit=args.limit, path=args.test_data)
     run_suffix = f"seed_{exp.train.seed}" + ("_" + options.get("gate_mode", "unified") if method == "DKD" else "")
     output = args.output_dir or str(Path(exp.train.save_path).parent / run_suffix)
     train(exp, method, options, distiller, bank, test_ds, device, output,
-          resume=args.resume, stop_after_epoch=args.stop_after_epoch, launch_args=vars(args))
+          resume=args.resume, stop_after_epoch=args.stop_after_epoch, launch_args=vars(args), eval_every=args.eval_every)
 
 
 if __name__ == "__main__":
