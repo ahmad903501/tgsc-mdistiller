@@ -83,6 +83,9 @@
     "runtime_dataset_required": false,
     "pinned_clone_setup_checked": true,
     "regression_tests_passed": 38,
-    "regression_seconds": 86.671
+    "regression_seconds": 86.671,
+    "publication": "pushed",
+    "anonymous_notebook_http_status": 200,
+    "published_git_clone_checkout_verified": true
   }
 }

@@ -102,7 +102,7 @@
     "qualification": "Operational smoke only; not a full benchmark or GPU bitwise replay verification. Supplied DKD excerpt begins at epoch3."
   },
   "full_benchmark_accuracy": "not measured",
-  "publication": "local implementation only",
+  "publication": "GitHub branch experiment/epkd-official-methods",
   "github_delivery": {
     "date": "2026-11-09",
     "repository": "https://github.com/ahmad903501/tgsc-mdistiller",
@@ -111,6 +111,9 @@
     "runtime_dataset_required": false,
     "pinned_clone_setup_checked": true,
     "regression_tests_passed": 38,
-    "regression_seconds": 86.671
+    "regression_seconds": 86.671,
+    "publication": "pushed",
+    "anonymous_notebook_http_status": 200,
+    "published_git_clone_checkout_verified": true
   }
 }

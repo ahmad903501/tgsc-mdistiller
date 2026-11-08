@@ -366,3 +366,8 @@ Runtime implementation committed as 49113223d7c98422888321fbad8ff410953e4a46. Re
 
 
 Final GitHub-first delivery validation:38/38tests passed in86.671s, including numerical/regression coverage and new offline clone/rerun/edit-protection checks. All14newnotebooks pin implementation49113223d7c98422888321fbad8ff410953e4a46. No runtimeDataset required. Reports updated; delivery ready for requested branch push.
+
+
+### 2026-11-09: GitHub-first notebooks published and independently checked
+
+Pushed implementation4911322 and notebook deliveryf534795 to origin/experiment/epkd-official-methods. All14newnotebooks clone the public repository at full pinned implementation49113223d7c98422888321fbad8ff410953e4a46. Independently fetched the published VRM notebook anonymously (HTTP200) and executed its exact clone/checkout prefix in a fresh workspace folder; required runtime sources are present at the expected commit. No runtime ZIP/Dataset is required. Proof saved in .test-artifacts/github_published_delivery.json; reports updated. No GPU training, pip installation or data download was performed during this online bootstrap check. This documentation/report commit records completion; source pin remains unchanged.
