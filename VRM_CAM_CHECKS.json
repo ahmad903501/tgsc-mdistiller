@@ -1,0 +1,77 @@
+{
+  "date": "2026-11-09",
+  "reference_commit": "56d02cec61603321ed279aac43c148ae84933402",
+  "reference_loss_sha256": "1cf4dfb2cd0953d1192ced7b5b671c7a6e574003d9d4d18217cb4c98b1647c5d",
+  "reference_augmentation_sha256": "edc6a6193229d4a620a821401680582efdceaadebed6dc55c06294fe12f39f82",
+  "ported_loss_functions_ast_identical": true,
+  "ported_augmentation_definitions_ast_identical": 20,
+  "loss_values_and_gradients_max_difference": 0,
+  "reference_test_batch_size": 64,
+  "reference_test_classes": 100,
+  "augmentation_pixel_parity_seeds": 30,
+  "batch_augmentation_rng_order_verified": true,
+  "teacher_student_pair": "resnet32x4 -> resnet8x4",
+  "official_teacher_preflight_sizes": [
+    16,
+    20,
+    24,
+    28,
+    32
+  ],
+  "passes_option1": [
+    3,
+    3,
+    3,
+    1,
+    1
+  ],
+  "passes_option2": [
+    3,
+    3,
+    3,
+    3,
+    1
+  ],
+  "strides_both": [
+    8,
+    8,
+    8,
+    2,
+    8
+  ],
+  "cpu_resume_exact_both_options": true,
+  "teacher_free_exports_verified": true,
+  "zipped_and_extracted_kaggle_bootstrap_checked": true,
+  "full_suite": {
+    "passed": 38,
+    "total": 38,
+    "seconds": 73.031,
+    "log": ".test-artifacts/vrm_full_suite.log"
+  },
+  "followup_delivery_check": "passed after adding zipped/extracted bootstrap cases",
+  "environment": {
+    "torch": "2.6.0+cpu",
+    "torchvision": "0.21.0+cpu",
+    "numpy": "2.2.3",
+    "pillow": "11.1.0",
+    "device": "CPU"
+  },
+  "source_sha256": "e9801937516e222ce363e36f6bcc9f5fee84cbcbb10b6e452224a327c9b02aee",
+  "bundle": {
+    "path": "../kaggle_notebooks/VRM_CAM_RUNTIME.zip",
+    "bytes": 126538,
+    "sha256": "2a5e20d29c266c27a8ad5da21421479b00297a5e93ed3a9c649e85be2fcdc816"
+  },
+  "scope": "Published-code VRM variant, no paper entropy pruning; no GPU benchmark run",
+  "seeds_notebooks": [
+    0,
+    1,
+    2
+  ],
+  "lr_milestones": [
+    48,
+    144,
+    192,
+    210
+  ]
+}

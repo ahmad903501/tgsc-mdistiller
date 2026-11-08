@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-08",
+  "branch": "experiment/epkd-official-methods",
+  "pipeline": "original EP-KD with official DKD/SimKD/ReviewKD",
+  "torch": "2.6.0+cpu",
+  "device": "CPU",
+  "tests": {
+    "command": "python -m unittest discover -s tests -p test_*.py -q",
+    "passed": 33,
+    "total": 33,
+    "new": 6,
+    "legacy": 27,
+    "seconds": 66.128,
+    "log": ".test-artifacts/epkd_full_suite_final.log"
+  },
+  "configured_pairs_checked": 11,
+  "crop_sizes_checked": [
+    16,
+    20,
+    24,
+    28,
+    32
+  ],
+  "official_teacher_files": {
+    "resnet32x4": {
+      "exists": true,
+      "sha256": "22aa12e2b632b19ddde155ccf2388671842ddd304824b3095e0a7fff364beb4f"
+    },
+    "vgg13": {
+      "exists": true,
+      "sha256": "ff25893af9e28fe12cfcc4fd0c699596754eb89bfafd521dfb1301cd281b47f8"
+    },
+    "resnet56": {
+      "exists": true,
+      "sha256": "4143895c82105da0a73236230db11aee5be39b660fe21e1323037c774f994155"
+    },
+    "resnet110": {
+      "exists": true,
+      "sha256": "75dc04faf468c078f1dfa010b51069fa3a8a4b91145379574e05c8e63e7441a9"
+    }
+  },
+  "source_sha256": "54a4b09511f1780a134ea75f3dede588a0561132bfef263cb28a0318bf3c5e03",
+  "source_bundle": {
+    "relative_path": "../kaggle_notebooks/EPKD_RUNTIME.zip",
+    "bytes": 115907,
+    "sha256": "e39828017971e486cfb57883e97484f7fe6e88319800c4abfd883f68af6ea6f2"
+  },
+  "checks": [
+    "exact official full+crop losses; SimKD feature-only",
+    "crop BN running means/variances preserved including adapters",
+    "CPU bitwise full-vs-resumed weights for all3methods",
+    "teacher-free exports match inference",
+    "changed data rejected and completed checkpoints reopened",
+    "CLI smoke, notebook syntax, ZIPCRC and isolated bundle imports"
+  ],
+  "defaults": {
+    "seed": 27,
+    "precision": "FP32",
+    "strides": [
+      8,
+      8,
+      8,
+      8,
+      8
+    ],
+    "passes": [
+      3,
+      3,
+      3,
+      1,
+      1
+    ],
+    "evaluation_every": 5
+  },
+  "notebooks": {
+    "full_runs": 11,
+    "verification": 1
+  },
+  "gpu_end_to_end": {
+    "status": "user-supplied Kaggle CUDA smoke passed",
+    "date": "2026-11-08",
+    "teacher": "resnet56",
+    "student": "resnet20",
+    "methods": [
+      "DKD",
+      "SIMKD",
+      "REVIEWKD"
+    ],
+    "training_images": 128,
+    "evaluation_images": 128,
+    "epochs": 5,
+    "passes_per_epoch": 1,
+    "optimizer_steps_per_epoch": 4,
+    "checks": [
+      "all five crop stages",
+      "epoch-boundary resume",
+      "logging and reporting assertions",
+      "export evaluation"
+    ],
+    "evidence": ".test-artifacts/epkd_kaggle_user_smoke.log",
+    "qualification": "Operational smoke only; not a full benchmark or GPU bitwise replay verification. Supplied DKD excerpt begins at epoch3."
+  },
+  "full_benchmark_accuracy": "not measured",
+  "publication": "local implementation only"
+}

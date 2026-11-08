@@ -41,9 +41,14 @@ def write_reports(output, *, plots=True):
             axes[0,1].plot([r["epoch"] for r in measured], [r["test"][key] for r in measured], marker="o", label=key)
         axes[0,1].legend()
     axes[0,1].set(title="Measured test accuracy", ylabel="Accuracy (%)")
-    axes[1,0].plot(epochs, [row["gate_mean"] for row in rows], label="Mean gate")
-    axes[1,0].plot(epochs, [row["diagnostics"].get("q_mean", float("nan")) for row in rows], label="Mean quality")
-    axes[1,0].set(title="TGSC quality and gating", ylabel="Value")
+    if rows[0].get("pipeline") == "epkd":
+        axes[1,0].plot(epochs, [row.get("teacher_crop_top1") for row in rows], label="Teacher crop top1")
+        axes[1,0].plot(epochs, [row.get("train_full_top1") for row in rows], label="Student full-image top1")
+        axes[1,0].set(title="EP-KD training diagnostics", ylabel="Accuracy (%)")
+    else:
+        axes[1,0].plot(epochs, [row["gate_mean"] for row in rows], label="Mean gate")
+        axes[1,0].plot(epochs, [row["diagnostics"].get("q_mean", float("nan")) for row in rows], label="Mean quality")
+        axes[1,0].set(title="TGSC quality and gating", ylabel="Value")
     axes[1,0].legend()
     axes[1,1].step(epochs, [row["lr"] for row in rows], where="post")
     axes[1,1].set(title="Learning rate", ylabel="Learning rate", yscale="log")

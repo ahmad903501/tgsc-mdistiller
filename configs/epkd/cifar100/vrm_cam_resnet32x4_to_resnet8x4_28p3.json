@@ -1,0 +1,82 @@
+{
+  "teacher_model": "resnet32x4",
+  "teacher_checkpoint": null,
+  "student_model": "resnet8x4",
+  "student_checkpoint": null,
+  "num_classes": 100,
+  "data": {
+    "root": "./data",
+    "batch_size": 64,
+    "num_workers": 0,
+    "pin_memory": true,
+    "stages": [
+      [
+        16,
+        48
+      ],
+      [
+        20,
+        48
+      ],
+      [
+        24,
+        48
+      ],
+      [
+        28,
+        48
+      ],
+      [
+        32,
+        48
+      ]
+    ]
+  },
+  "kd": {
+    "T": 4.0,
+    "alpha": 0.9
+  },
+  "optim": {
+    "base_lr": 0.05,
+    "momentum": 0.9,
+    "weight_decay": 0.0005,
+    "lr_half_on_stage_change": false,
+    "milestones": [
+      48,
+      144,
+      192,
+      210
+    ],
+    "milestone_gamma": 0.1
+  },
+  "train": {
+    "epochs": 240,
+    "seed": 27,
+    "save_path": "vrm_cam_runs/vrm_cam_resnet32x4_to_resnet8x4_28p3/model.pth",
+    "log_every": 0,
+    "log_dir": "logs",
+    "run_name": "vrm_cam_resnet32x4_to_resnet8x4_28p3"
+  },
+  "method": "VRM",
+  "method_options": {},
+  "profile_source": "VRM published code56d02ce + paired full/CAM curriculum; original weak/strong transforms at32px",
+  "epkd": {
+    "passes": [
+      3,
+      3,
+      3,
+      3,
+      1
+    ],
+    "strides": [
+      8,
+      8,
+      8,
+      2,
+      8
+    ],
+    "anchor_weight": 1.0,
+    "view_weight": 1.0,
+    "proposal_batch_size": 256
+  }
+}

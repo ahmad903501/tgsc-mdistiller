@@ -9,8 +9,8 @@ from .config import experiment_config_from_dict
 def load_run(path):
     raw = json.loads(Path(path).read_text(encoding="utf-8-sig"))
     method = raw.get("method", "").upper()
-    if method not in ("DKD", "SIMKD", "REVIEWKD"):
-        raise ValueError("method must be DKD, SIMKD, or REVIEWKD")
+    if method not in ("DKD", "SIMKD", "REVIEWKD", "VRM"):
+        raise ValueError("method must be DKD, SIMKD, REVIEWKD, or VRM")
     exp = experiment_config_from_dict(raw)
     if sum(d for _, d in exp.data.stages) != exp.train.epochs:
         raise ValueError("Curriculum durations must sum to train.epochs")

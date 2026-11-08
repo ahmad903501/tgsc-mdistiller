@@ -1,5 +1,6 @@
 """Training, epoch-boundary recovery, and method-aware inference exports."""
 import copy
+import argparse
 from dataclasses import asdict
 import json
 from pathlib import Path
@@ -34,8 +35,9 @@ def load_teacher(model, path):
         from numpy._core.multiarray import scalar
     except ImportError:  # NumPy 1.x uses the older module path.
         from numpy.core.multiarray import scalar
-    allowed = [(scalar, "numpy.core.multiarray.scalar"), scalar, np.dtype,
-               type(np.dtype("float64")), type(np.dtype("float32"))]
+    allowed = [(scalar, "numpy.core.multiarray.scalar"), (scalar, "numpy._core.multiarray.scalar"),
+               scalar, np.dtype, argparse.Namespace,
+               type(np.dtype("float64")), type(np.dtype("float32")), type(np.dtype("int64"))]
     with torch.serialization.safe_globals(allowed):
         payload = torch.load(path, map_location="cpu", weights_only=True)
     state = payload.get("model", payload.get("state_dict", payload))

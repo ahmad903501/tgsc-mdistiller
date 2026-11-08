@@ -64,6 +64,8 @@ def main(argv=None):
     from mdistiller.tgsc.runtime import (seed_everything, environment, build_model, load_teacher,
                                       build_distiller, load_export, evaluate, train)
     exp, method, options, raw = load_run(args.config)
+    if method == "VRM":
+        raise ValueError("VRM requires paired views; use tools/run_epkd.py, not the legacy TGSC CLI")
     if args.data_root:
         exp.data.root = str(Path(args.data_root).resolve())
     if args.seed is not None:

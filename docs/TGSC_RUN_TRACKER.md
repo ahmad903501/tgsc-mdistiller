@@ -6,7 +6,7 @@ Initial comparison: seed 27, 240 epochs, test evaluation every 5 epochs plus fin
 
 | ID | Teacher | Student | Method | Notebook | Setup | Run status | Test top-1 (%) | Kaggle output / checkpoint |
 |---|---|---|---|---|---|---|---|---|
-| 01 | resnet32x4 | resnet8x4 | DKD + TGSC | [tgsc_dkd_resnet32x4_to_resnet8x4.ipynb](../notebooks/runs/tgsc_dkd_resnet32x4_to_resnet8x4.ipynb) | Config and per-run notebook checked; Kaggle preflight pending | Not started | - | - |
+| 01 | resnet32x4 | resnet8x4 | DKD + TGSC | [tgsc_dkd_resnet32x4_to_resnet8x4.ipynb](../notebooks/runs/tgsc_dkd_resnet32x4_to_resnet8x4.ipynb) | Kaggle T4 preflight passed | Running: epoch 2 confirmed | - | - |
 | 02 | resnet32x4 | resnet8x4 | SIMKD + TGSC | [tgsc_simkd_resnet32x4_to_resnet8x4.ipynb](../notebooks/runs/tgsc_simkd_resnet32x4_to_resnet8x4.ipynb) | Config and per-run notebook checked; Kaggle preflight pending | Not started | - | - |
 | 03 | resnet32x4 | resnet8x4 | REVIEWKD + TGSC | [tgsc_reviewkd_resnet32x4_to_resnet8x4.ipynb](../notebooks/runs/tgsc_reviewkd_resnet32x4_to_resnet8x4.ipynb) | Config and per-run notebook checked; Kaggle preflight pending | Not started | - | - |
 | 04 | vgg13 | vgg8 | DKD + TGSC | [tgsc_dkd_vgg13_to_vgg8.ipynb](../notebooks/runs/tgsc_dkd_vgg13_to_vgg8.ipynb) | Config and per-run notebook checked; Kaggle preflight pending | Not started | - | - |

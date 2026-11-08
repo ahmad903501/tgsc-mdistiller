@@ -126,6 +126,9 @@ def generate(root, revision):
                 if block["cell_type"] == "code":
                     ast.parse("".join(block["source"]))
                     block.update(execution_count=None, outputs=[])
+            nb["nbformat_minor"] = 5
+            for i, c in enumerate(nb["cells"]):
+                c["id"] = f"cell-{i}"
             (output / name).write_text(json.dumps(nb, indent=1) + "\n", encoding="utf-8")
             records.append({"notebook": name, "teacher": teacher, "student": student,
                             "method": method.upper(), "config": config_name if ready else None,
