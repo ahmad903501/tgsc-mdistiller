@@ -359,3 +359,10 @@ Read supplied VRM_Paper.pdf including supplement and local official VRM code at5
 ### 2026-11-09: GitHub-first notebook publication preparation
 
 User explicitly requested pushing code and using notebooks directly rather than runtime ZIPs. Replaced EP-KD and VRM notebook setup with shared GitHub clone/pinned-commit bootstrap, tracked-edit protection, required-source checks and fresh _github checkout directories. Source is ahmad903501/tgsc-mdistiller on experiment/epkd-official-methods. Updated generators/docs; final notebooks will pin the implementation commit after committing the runtime. No loss/training defaults changed. Offline local Git fixture validates clone, same-pin rerun and preservation of local tracked edits. Windows sandbox blocked Git signal-pipe IPC; the identical fixture passed outside sandbox. Existing38test numerical/regression results remain applicable; only notebook bootstrap/generation changed. Preparing runtime commit then notebook pin/delivery commit before publishing branch.
+
+### 2026-11-09: GitHub notebook delivery pinned
+
+Runtime implementation committed as 49113223d7c98422888321fbad8ff410953e4a46. Regeneratedall12EPKDnotebooksandtwoVRMnotebookstoclonepublicahmad903501/tgsc-mdistillerandcheckoutthatimmutablecommit. RuntimeDataset/ZIPisnolongerrequired;teacherandCIFARinputsremainoptionalattached/downloaded. Pinnedsetupvalidatesexpectedfilesandprotectstrackededits. Publishedbranchwillbeexperiment/epkd-official-methods. Sourcecheckoutdirsuse_githubsuffix toavoidearliernonGitextractedfolders. All42notebooks/276codecells schema/syntaxauditpass. LocalGitclone/rerun/edit-protectionfixturepassedoutsidetheWindowsIPC-restrictingsandbox. Finaloperation:commitnotebooksandpushbranch,thenverifyremotecommitandcleanstatus.
+
+
+Final GitHub-first delivery validation:38/38tests passed in86.671s, including numerical/regression coverage and new offline clone/rerun/edit-protection checks. All14newnotebooks pin implementation49113223d7c98422888321fbad8ff410953e4a46. No runtimeDataset required. Reports updated; delivery ready for requested branch push.

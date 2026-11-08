@@ -59,8 +59,9 @@
   "source_sha256": "e9801937516e222ce363e36f6bcc9f5fee84cbcbb10b6e452224a327c9b02aee",
   "bundle": {
     "path": "../kaggle_notebooks/VRM_CAM_RUNTIME.zip",
-    "bytes": 126538,
-    "sha256": "2a5e20d29c266c27a8ad5da21421479b00297a5e93ed3a9c649e85be2fcdc816"
+    "bytes": 126560,
+    "sha256": "795bb4c4b206b1802e59f32f32c5b9a2d5669a07833686bd9dcf676320971c3a",
+    "required_for_notebooks": false
   },
   "scope": "Published-code VRM variant, no paper entropy pruning; no GPU benchmark run",
   "seeds_notebooks": [
@@ -73,5 +74,15 @@
     144,
     192,
     210
-  ]
+  ],
+  "github_delivery": {
+    "date": "2026-11-09",
+    "repository": "https://github.com/ahmad903501/tgsc-mdistiller",
+    "branch": "experiment/epkd-official-methods",
+    "source_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runtime_dataset_required": false,
+    "pinned_clone_setup_checked": true,
+    "regression_tests_passed": 38,
+    "regression_seconds": 86.671
+  }
 }

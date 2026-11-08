@@ -42,8 +42,9 @@
   "source_sha256": "54a4b09511f1780a134ea75f3dede588a0561132bfef263cb28a0318bf3c5e03",
   "source_bundle": {
     "relative_path": "../kaggle_notebooks/EPKD_RUNTIME.zip",
-    "bytes": 115907,
-    "sha256": "e39828017971e486cfb57883e97484f7fe6e88319800c4abfd883f68af6ea6f2"
+    "bytes": 126560,
+    "sha256": "1e8064b83488ccf5dbdf9ff410fbce9eb09f30dee79a88ff9d901b92eee47ac1",
+    "required_for_notebooks": false
   },
   "checks": [
     "exact official full+crop losses; SimKD feature-only",
@@ -101,5 +102,15 @@
     "qualification": "Operational smoke only; not a full benchmark or GPU bitwise replay verification. Supplied DKD excerpt begins at epoch3."
   },
   "full_benchmark_accuracy": "not measured",
-  "publication": "local implementation only"
+  "publication": "local implementation only",
+  "github_delivery": {
+    "date": "2026-11-09",
+    "repository": "https://github.com/ahmad903501/tgsc-mdistiller",
+    "branch": "experiment/epkd-official-methods",
+    "source_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runtime_dataset_required": false,
+    "pinned_clone_setup_checked": true,
+    "regression_tests_passed": 38,
+    "regression_seconds": 86.671
+  }
 }

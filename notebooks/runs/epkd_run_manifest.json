@@ -1,0 +1,123 @@
+[
+  {
+    "notebook": "epkd_dkd_resnet32x4_to_resnet8x4.ipynb",
+    "config": "dkd_resnet32x4_to_resnet8x4.json",
+    "method": "DKD",
+    "teacher": "resnet32x4",
+    "student": "resnet8x4",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_simkd_resnet32x4_to_resnet8x4.ipynb",
+    "config": "simkd_resnet32x4_to_resnet8x4.json",
+    "method": "SIMKD",
+    "teacher": "resnet32x4",
+    "student": "resnet8x4",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_reviewkd_resnet32x4_to_resnet8x4.ipynb",
+    "config": "reviewkd_resnet32x4_to_resnet8x4.json",
+    "method": "REVIEWKD",
+    "teacher": "resnet32x4",
+    "student": "resnet8x4",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_dkd_vgg13_to_vgg8.ipynb",
+    "config": "dkd_vgg13_to_vgg8.json",
+    "method": "DKD",
+    "teacher": "vgg13",
+    "student": "vgg8",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_simkd_vgg13_to_vgg8.ipynb",
+    "config": "simkd_vgg13_to_vgg8.json",
+    "method": "SIMKD",
+    "teacher": "vgg13",
+    "student": "vgg8",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_dkd_resnet56_to_resnet20.ipynb",
+    "config": "dkd_resnet56_to_resnet20.json",
+    "method": "DKD",
+    "teacher": "resnet56",
+    "student": "resnet20",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_simkd_resnet56_to_resnet20.ipynb",
+    "config": "simkd_resnet56_to_resnet20.json",
+    "method": "SIMKD",
+    "teacher": "resnet56",
+    "student": "resnet20",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_reviewkd_resnet56_to_resnet20.ipynb",
+    "config": "reviewkd_resnet56_to_resnet20.json",
+    "method": "REVIEWKD",
+    "teacher": "resnet56",
+    "student": "resnet20",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_dkd_resnet110_to_resnet32.ipynb",
+    "config": "dkd_resnet110_to_resnet32.json",
+    "method": "DKD",
+    "teacher": "resnet110",
+    "student": "resnet32",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_simkd_resnet110_to_resnet32.ipynb",
+    "config": "simkd_resnet110_to_resnet32.json",
+    "method": "SIMKD",
+    "teacher": "resnet110",
+    "student": "resnet32",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  },
+  {
+    "notebook": "epkd_reviewkd_resnet110_to_resnet32.ipynb",
+    "config": "reviewkd_resnet110_to_resnet32.json",
+    "method": "REVIEWKD",
+    "teacher": "resnet110",
+    "student": "resnet32",
+    "training_input": "original_cifar100",
+    "pipeline": "epkd",
+    "runtime_revision": "49113223d7c98422888321fbad8ff410953e4a46",
+    "runnable": true
+  }
+]
